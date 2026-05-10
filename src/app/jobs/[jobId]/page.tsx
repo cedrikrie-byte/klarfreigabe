@@ -11,6 +11,42 @@ type JobPageProps = {
   }>;
 };
 
+type JobPhoto = {
+  id: string;
+  fileUrl: string;
+  fileName: string | null;
+};
+
+type JobItem = {
+  id: string;
+  title: string;
+  description: string;
+  priceText: string | null;
+  status: string;
+  photos: JobPhoto[];
+  approval: {
+    token: string;
+    status: string;
+    approvedAt: Date | null;
+    rejectedAt: Date | null;
+    customerComment: string | null;
+  } | null;
+};
+
+type JobDetail = {
+  id: string;
+  title: string;
+  vehicle: string | null;
+  licensePlate: string | null;
+  notes: string | null;
+  customer: {
+    name: string;
+    phone: string | null;
+    email: string | null;
+  };
+  items: JobItem[];
+};
+
 function getStatusLabel(status: string) {
   if (status === "PENDING") return "Offen";
   if (status === "APPROVED") return "Freigegeben";
@@ -32,7 +68,7 @@ export default async function JobPage({ params }: JobPageProps) {
 
   const { jobId } = await params;
 
-  const job = await prisma.job.findFirst({
+  const job: JobDetail | null = await prisma.job.findFirst({
     where: {
       id: jobId,
       companyId: user.companyId,
@@ -156,7 +192,7 @@ export default async function JobPage({ params }: JobPageProps) {
           {job.notes && (
             <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900 p-4">
               <p className="text-sm text-slate-400">Notiz</p>
-              <p className="mt-1 text-sm leading-6 text-slate-200">
+              <p className="mt-1 whitespace-pre-line text-sm leading-6 text-slate-200">
                 {job.notes}
               </p>
             </div>
@@ -187,7 +223,7 @@ export default async function JobPage({ params }: JobPageProps) {
               </p>
             ) : (
               <div className="mt-5 space-y-4">
-                {job.items.map((item) => {
+                {job.items.map((item: JobItem) => {
                   const approvalToken = item.approval?.token;
                   const approvalUrl = approvalToken
                     ? getApprovalUrl(approvalToken)
@@ -204,7 +240,7 @@ export default async function JobPage({ params }: JobPageProps) {
                             <div className="min-w-0">
                               <p className="font-semibold">{item.title}</p>
 
-                              <p className="mt-1 text-sm leading-6 text-slate-400">
+                              <p className="mt-1 whitespace-pre-line text-sm leading-6 text-slate-400">
                                 {item.description}
                               </p>
                             </div>
@@ -243,7 +279,7 @@ export default async function JobPage({ params }: JobPageProps) {
                               <p className="text-sm font-semibold text-orange-200">
                                 Rückfrage vom Kunden
                               </p>
-                              <p className="mt-1 text-sm leading-6 text-orange-100">
+                              <p className="mt-1 whitespace-pre-line text-sm leading-6 text-orange-100">
                                 {item.approval.customerComment}
                               </p>
                             </div>
@@ -251,7 +287,7 @@ export default async function JobPage({ params }: JobPageProps) {
 
                           {item.photos.length > 0 && (
                             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                              {item.photos.map((photo) => (
+                              {item.photos.map((photo: JobPhoto) => (
                                 <img
                                   key={photo.id}
                                   src={photo.fileUrl}

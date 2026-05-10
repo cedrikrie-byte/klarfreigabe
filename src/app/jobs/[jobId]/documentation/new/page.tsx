@@ -4,6 +4,11 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
+type SelectedPhoto = {
+  file: File;
+  previewUrl: string;
+};
+
 export default function NewDocumentationPage() {
   const router = useRouter();
   const params = useParams<{ jobId: string }>();
@@ -12,71 +17,91 @@ export default function NewDocumentationPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priceText, setPriceText] = useState("");
-  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedPhotos, setSelectedPhotos] = useState<SelectedPhoto[]>([]);
+
+  const [isLoading, setIsLoading] = useState(false);
 
   function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
-  const files = Array.from(event.target.files ?? []);
-  const previews = files.map((file) => URL.createObjectURL(file));
+    const files = Array.from(event.target.files ?? []);
 
-  setSelectedFiles(files);
-  setPhotoPreviews(previews);
-}
+    const newPhotos = files.map((file) => ({
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+
+    setSelectedPhotos((currentPhotos) => [...currentPhotos, ...newPhotos]);
+
+    event.target.value = "";
+  }
+
+  function removePhoto(previewUrl: string) {
+    URL.revokeObjectURL(previewUrl);
+
+    setSelectedPhotos((currentPhotos) =>
+      currentPhotos.filter((photo) => photo.previewUrl !== previewUrl)
+    );
+  }
 
   async function handleCreateApproval(event: React.FormEvent<HTMLFormElement>) {
-  event.preventDefault();
+    event.preventDefault();
 
-  const uploadedPhotos = [];
+    setIsLoading(true);
 
-for (const file of selectedFiles) {
-  const formData = new FormData();
-  formData.append("file", file);
+    const uploadedPhotos = [];
 
-  const uploadResponse = await fetch("/api/uploads", {
-    method: "POST",
-    body: formData,
-  });
+    for (const photo of selectedPhotos) {
+      const formData = new FormData();
+      formData.append("file", photo.file);
 
-  const uploadResult = await uploadResponse.json();
+      const uploadResponse = await fetch("/api/uploads", {
+        method: "POST",
+        body: formData,
+      });
 
-  if (!uploadResponse.ok) {
-    alert(uploadResult.error ?? "Foto konnte nicht hochgeladen werden.");
-    return;
+      const uploadResult = await uploadResponse.json();
+
+      if (!uploadResponse.ok) {
+        alert(uploadResult.error ?? "Foto konnte nicht hochgeladen werden.");
+        setIsLoading(false);
+        return;
+      }
+
+      uploadedPhotos.push({
+        fileUrl: uploadResult.fileUrl,
+        fileName: uploadResult.fileName,
+        mimeType: uploadResult.mimeType,
+      });
+    }
+
+    const response = await fetch("/api/documentation-items", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        jobId: params.jobId,
+        type,
+        title,
+        description,
+        priceText,
+        photos: uploadedPhotos,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(result.error ?? "Dokumentation konnte nicht gespeichert werden.");
+      setIsLoading(false);
+      return;
+    }
+
+    router.push(`/jobs/${params.jobId}`);
+    router.refresh();
   }
-
-  uploadedPhotos.push({
-    fileUrl: uploadResult.fileUrl,
-    fileName: uploadResult.fileName,
-    mimeType: uploadResult.mimeType,
-  });
-}
-const response = await fetch("/api/documentation-items", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-  jobId: params.jobId,
-  type,
-  title,
-  description,
-  priceText,
-  photos: uploadedPhotos,
-}),
-  });
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    alert(result.error ?? "Dokumentation konnte nicht gespeichert werden.");
-    return;
-  }
-
-  router.push(`/jobs/${params.jobId}`);
-}
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
+    <main className="min-h-screen bg-slate-950 px-4 py-6 text-white sm:px-6 sm:py-10">
       <div className="mx-auto w-full max-w-2xl">
         <Link
           href={`/jobs/${params.jobId}`}
@@ -96,7 +121,7 @@ const response = await fetch("/api/documentation-items", {
 
           <p className="mt-3 text-slate-300">
             Beschreibe die Zusatzarbeit, füge Fotos hinzu und erstelle daraus
-            später einen Freigabelink für den Kunden.
+            einen Freigabelink für den Kunden.
           </p>
         </div>
 
@@ -165,8 +190,8 @@ const response = await fetch("/api/documentation-items", {
           <div className="rounded-2xl border border-dashed border-white/15 bg-slate-900 p-5">
             <p className="font-semibold">Fotos hinzufügen</p>
             <p className="mt-2 text-sm text-slate-400">
-              Wähle ein oder mehrere Fotos aus. Die Vorschau ist schon aktiv,
-              die echte Speicherung folgt später.
+              Wähle ein oder mehrere Fotos aus. Du kannst ausgewählte Fotos vor
+              dem Speichern wieder entfernen.
             </p>
 
             <input
@@ -177,15 +202,27 @@ const response = await fetch("/api/documentation-items", {
               className="mt-4 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-slate-300"
             />
 
-            {photoPreviews.length > 0 && (
+            {selectedPhotos.length > 0 && (
               <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {photoPreviews.map((previewUrl) => (
-                  <img
-                    key={previewUrl}
-                    src={previewUrl}
-                    alt="Ausgewähltes Werkstattfoto"
-                    className="h-32 w-full rounded-2xl object-cover"
-                  />
+                {selectedPhotos.map((photo) => (
+                  <div
+                    key={photo.previewUrl}
+                    className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950"
+                  >
+                    <img
+                      src={photo.previewUrl}
+                      alt="Ausgewähltes Werkstattfoto"
+                      className="h-32 w-full object-cover"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(photo.previewUrl)}
+                      className="w-full bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-200"
+                    >
+                      Foto entfernen
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -193,9 +230,12 @@ const response = await fetch("/api/documentation-items", {
 
           <button
             type="submit"
-            className="w-full rounded-2xl bg-white px-5 py-3 font-semibold text-slate-950"
+            disabled={isLoading}
+            className="w-full rounded-2xl bg-white px-5 py-3 font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Dokumentation speichern
+            {isLoading
+              ? "Dokumentation wird gespeichert..."
+              : "Dokumentation speichern"}
           </button>
         </form>
       </div>

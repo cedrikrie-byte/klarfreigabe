@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import CopyLinkButton from "@/components/CopyLinkButton";
+import DeleteDocumentationButton from "@/components/DeleteDocumentationButton";
 
 type JobPageProps = {
   params: Promise<{
@@ -262,14 +263,18 @@ export default async function JobPage({ params }: JobPageProps) {
                           )}
                         </div>
 
-                        <div className="grid gap-2 sm:grid-cols-4">
+                        <div className="grid gap-2 sm:grid-cols-5">
                           {item.status === "PENDING" && (
-                            <Link
-                              href={`/jobs/${job.id}/documentation/${item.id}/edit`}
-                              className="rounded-xl border border-white/10 px-3 py-3 text-center text-sm font-semibold text-white sm:py-2"
-                            >
-                              Bearbeiten
-                            </Link>
+                            <>
+                              <Link
+                                href={`/jobs/${job.id}/documentation/${item.id}/edit`}
+                                className="rounded-xl border border-white/10 px-3 py-3 text-center text-sm font-semibold text-white sm:py-2"
+                              >
+                                Bearbeiten
+                              </Link>
+
+                              <DeleteDocumentationButton itemId={item.id} />
+                            </>
                           )}
 
                           {item.approval && (

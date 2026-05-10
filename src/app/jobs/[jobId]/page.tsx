@@ -101,14 +101,23 @@ export default async function JobPage({ params }: JobPageProps) {
               </h1>
             </div>
 
-            <form action={deleteJob}>
-              <button
-                type="submit"
-                className="w-full rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200 sm:w-auto sm:py-2"
+            <div className="grid gap-2 sm:flex sm:items-center">
+              <Link
+                href={`/jobs/${job.id}/edit`}
+                className="rounded-2xl border border-white/10 px-4 py-3 text-center text-sm font-semibold text-white sm:py-2"
               >
-                Auftrag löschen
-              </button>
-            </form>
+                Auftrag bearbeiten
+              </Link>
+
+              <form action={deleteJob}>
+                <button
+                  type="submit"
+                  className="w-full rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200 sm:w-auto sm:py-2"
+                >
+                  Auftrag löschen
+                </button>
+              </form>
+            </div>
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -142,6 +151,15 @@ export default async function JobPage({ params }: JobPageProps) {
               )}
             </div>
           </div>
+
+          {job.notes && (
+            <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900 p-4">
+              <p className="text-sm text-slate-400">Notiz</p>
+              <p className="mt-1 text-sm leading-6 text-slate-200">
+                {job.notes}
+              </p>
+            </div>
+          )}
 
           <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

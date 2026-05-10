@@ -10,6 +10,12 @@ type PdfPageProps = {
   }>;
 };
 
+type PdfPhoto = {
+  id: string;
+  fileUrl: string;
+  fileName: string | null;
+};
+
 export default async function DocumentationPdfPage({ params }: PdfPageProps) {
   const user = await getCurrentUser();
 
@@ -46,6 +52,7 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
   const job = item.job;
   const company = job.company;
   const customer = job.customer;
+  const photos: PdfPhoto[] = item.photos;
 
   const statusLabel =
     item.status === "PENDING"
@@ -179,13 +186,13 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
         <section className="mt-6">
           <h2 className="text-xl font-bold">Fotos</h2>
 
-          {item.photos.length === 0 ? (
+          {photos.length === 0 ? (
             <p className="mt-2 text-sm text-slate-600">
               Es wurden keine Fotos hinterlegt.
             </p>
           ) : (
             <div className="mt-4 grid grid-cols-2 gap-4">
-              {item.photos.map((photo) => (
+              {photos.map((photo: PdfPhoto) => (
                 <img
                   key={photo.id}
                   src={photo.fileUrl}

@@ -10,6 +10,12 @@ type EditDocumentationPageProps = {
   }>;
 };
 
+type EditPhoto = {
+  id: string;
+  fileUrl: string;
+  fileName: string | null;
+};
+
 export default async function EditDocumentationPage({
   params,
 }: EditDocumentationPageProps) {
@@ -40,6 +46,7 @@ export default async function EditDocumentationPage({
     notFound();
   }
 
+  const photos: EditPhoto[] = item.photos;
   const canEdit = item.status === "PENDING";
 
   async function updateDocumentation(formData: FormData) {
@@ -106,9 +113,7 @@ export default async function EditDocumentationPage({
             Dokumentation bearbeiten
           </p>
 
-          <h1 className="text-3xl font-bold tracking-tight">
-            {item.title}
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">{item.title}</h1>
 
           <p className="mt-3 text-slate-300">
             Du kannst diese Dokumentation bearbeiten, solange sie noch offen ist.
@@ -168,12 +173,12 @@ export default async function EditDocumentationPage({
             />
           </div>
 
-          {item.photos.length > 0 && (
+          {photos.length > 0 && (
             <div className="rounded-2xl border border-dashed border-white/15 bg-slate-900 p-5">
               <p className="font-semibold">Vorhandene Fotos</p>
 
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {item.photos.map((photo) => (
+                {photos.map((photo: EditPhoto) => (
                   <img
                     key={photo.id}
                     src={photo.fileUrl}

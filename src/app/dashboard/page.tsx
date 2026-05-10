@@ -10,6 +10,23 @@ type DashboardPageProps = {
   }>;
 };
 
+type DashboardJob = {
+  id: string;
+  title: string;
+  vehicle: string | null;
+  licensePlate: string | null;
+  customer: {
+    name: string;
+    phone: string | null;
+    email: string | null;
+  };
+  items: {
+    approval: {
+      status: string;
+    } | null;
+  }[];
+};
+
 export default async function DashboardPage({
   searchParams,
 }: DashboardPageProps) {
@@ -23,7 +40,7 @@ export default async function DashboardPage({
   const searchQuery = q?.trim() || "";
   const statusFilter = status?.trim() || "all";
 
-  const allJobs = await prisma.job.findMany({
+  const allJobs: DashboardJob[] = await prisma.job.findMany({
     where: {
       companyId: user.companyId,
     },
@@ -40,7 +57,7 @@ export default async function DashboardPage({
     },
   });
 
-  const filteredJobs = allJobs.filter((job) => {
+  const filteredJobs = allJobs.filter((job: DashboardJob) => {
     const searchText = [
       job.title,
       job.vehicle,
@@ -70,26 +87,32 @@ export default async function DashboardPage({
     return matchesSearch && matchesStatus;
   });
 
-  const openApprovals = allJobs.reduce((count, job) => {
+  const openApprovals = allJobs.reduce((count: number, job: DashboardJob) => {
     return (
       count +
       job.items.filter((item) => item.approval?.status === "PENDING").length
     );
   }, 0);
 
-  const approvedApprovals = allJobs.reduce((count, job) => {
-    return (
-      count +
-      job.items.filter((item) => item.approval?.status === "APPROVED").length
-    );
-  }, 0);
+  const approvedApprovals = allJobs.reduce(
+    (count: number, job: DashboardJob) => {
+      return (
+        count +
+        job.items.filter((item) => item.approval?.status === "APPROVED").length
+      );
+    },
+    0
+  );
 
-  const rejectedApprovals = allJobs.reduce((count, job) => {
-    return (
-      count +
-      job.items.filter((item) => item.approval?.status === "REJECTED").length
-    );
-  }, 0);
+  const rejectedApprovals = allJobs.reduce(
+    (count: number, job: DashboardJob) => {
+      return (
+        count +
+        job.items.filter((item) => item.approval?.status === "REJECTED").length
+      );
+    },
+    0
+  );
 
   function buildFilterUrl(nextStatus: string) {
     const params = new URLSearchParams();
@@ -144,7 +167,11 @@ export default async function DashboardPage({
               Einstellungen
             </Link>
 
-            <form action="/api/logout" method="post" className="col-span-2 sm:col-span-1">
+            <form
+              action="/api/logout"
+              method="post"
+              className="col-span-2 sm:col-span-1"
+            >
               <button
                 type="submit"
                 className="w-full rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-white sm:py-2"
@@ -290,7 +317,7 @@ export default async function DashboardPage({
             </div>
           ) : (
             <div className="mt-6 space-y-3">
-              {filteredJobs.map((job) => (
+              {filteredJobs.map((job: DashboardJob) => (
                 <Link
                   key={job.id}
                   href={`/jobs/${job.id}`}

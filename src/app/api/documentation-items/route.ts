@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
 const createDocumentationItemSchema = z.object({
-  jobId: z.string().min(1),
+  jobId: z.string().min(1, "Auftrag fehlt."),
   type: z.enum([
     "VEHICLE_INTAKE",
     "ADDITIONAL_WORK",
@@ -26,6 +26,14 @@ const createDocumentationItemSchema = z.object({
     )
     .optional(),
 });
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof z.ZodError) {
+    return error.issues[0]?.message || "Eingaben sind ungültig.";
+  }
+
+  return "Dokumentation konnte nicht gespeichert werden.";
+}
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -95,7 +103,7 @@ export async function POST(request: Request) {
     console.error(error);
 
     return NextResponse.json(
-      { error: "Dokumentation konnte nicht gespeichert werden." },
+      { error: getErrorMessage(error) },
       { status: 400 }
     );
   }

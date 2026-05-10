@@ -244,7 +244,16 @@ export default async function JobPage({ params }: JobPageProps) {
                           )}
                         </div>
 
-                        <div className="grid gap-2 sm:grid-cols-3">
+                        <div className="grid gap-2 sm:grid-cols-4">
+                          {item.status === "PENDING" && (
+                            <Link
+                              href={`/jobs/${job.id}/documentation/${item.id}/edit`}
+                              className="rounded-xl border border-white/10 px-3 py-3 text-center text-sm font-semibold text-white sm:py-2"
+                            >
+                              Bearbeiten
+                            </Link>
+                          )}
+
                           {item.approval && (
                             <>
                               <Link

@@ -56,6 +56,25 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
             {company.name} bittet um Ihre Freigabe für eine zusätzliche Arbeit.
           </p>
 
+          <div className="mt-5 rounded-2xl bg-slate-100 p-4">
+            <p className="text-sm text-slate-500">Werkstatt / Betrieb</p>
+            <p className="mt-1 font-semibold">{company.name}</p>
+
+            {company.phone && (
+              <p className="mt-1 text-sm text-slate-600">{company.phone}</p>
+            )}
+
+            {company.email && (
+              <p className="mt-1 text-sm text-slate-600">{company.email}</p>
+            )}
+
+            {company.address && (
+              <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">
+                {company.address}
+              </p>
+            )}
+          </div>
+
           {isAlreadyAnswered && (
             <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="font-semibold">
@@ -87,7 +106,7 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
             <p className="text-sm text-slate-500">Empfohlene Zusatzarbeit</p>
             <p className="mt-1 font-semibold">{item.title}</p>
 
-            <p className="mt-3 text-sm leading-6 text-slate-600">
+            <p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-600">
               {item.description}
             </p>
           </div>

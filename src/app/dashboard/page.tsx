@@ -137,7 +137,14 @@ export default async function DashboardPage({
               Neuer Auftrag
             </Link>
 
-            <form action="/api/logout" method="post">
+            <Link
+              href="/settings"
+              className="rounded-2xl border border-white/10 px-4 py-3 text-center text-sm font-semibold text-white sm:py-2"
+            >
+              Einstellungen
+            </Link>
+
+            <form action="/api/logout" method="post" className="col-span-2 sm:col-span-1">
               <button
                 type="submit"
                 className="w-full rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-white sm:py-2"

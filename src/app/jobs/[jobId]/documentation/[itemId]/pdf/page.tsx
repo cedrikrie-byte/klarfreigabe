@@ -83,8 +83,18 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
             <p className="text-sm text-slate-500">Betrieb</p>
             <p className="mt-1 font-semibold">{company.name}</p>
 
+            {company.phone && (
+              <p className="mt-1 text-sm text-slate-600">{company.phone}</p>
+            )}
+
             {company.email && (
               <p className="mt-1 text-sm text-slate-600">{company.email}</p>
+            )}
+
+            {company.address && (
+              <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">
+                {company.address}
+              </p>
             )}
           </div>
 
@@ -113,13 +123,21 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
               {job.licensePlate}
             </p>
           )}
+
+          {job.notes && (
+            <p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-600">
+              {job.notes}
+            </p>
+          )}
         </section>
 
         <section className="mt-6 rounded-2xl border border-slate-200 p-4">
           <p className="text-sm text-slate-500">Dokumentation</p>
           <h2 className="mt-1 text-2xl font-bold">{item.title}</h2>
 
-          <p className="mt-3 leading-7 text-slate-700">{item.description}</p>
+          <p className="mt-3 whitespace-pre-line leading-7 text-slate-700">
+            {item.description}
+          </p>
 
           {item.priceText && (
             <p className="mt-4 text-lg font-semibold">
@@ -151,7 +169,7 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
               <p className="text-sm font-semibold text-orange-900">
                 Rückfrage vom Kunden
               </p>
-              <p className="mt-1 text-sm leading-6 text-orange-900">
+              <p className="mt-1 whitespace-pre-line text-sm leading-6 text-orange-900">
                 {item.approval.customerComment}
               </p>
             </div>

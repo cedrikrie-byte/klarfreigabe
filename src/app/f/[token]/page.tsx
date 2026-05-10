@@ -7,6 +7,12 @@ type ApprovalPageProps = {
   }>;
 };
 
+type ApprovalPhoto = {
+  id: string;
+  fileUrl: string;
+  fileName: string | null;
+};
+
 export default async function ApprovalPage({ params }: ApprovalPageProps) {
   const { token } = await params;
 
@@ -36,6 +42,8 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
   const item = approval.documentationItem;
   const job = item.job;
   const company = job.company;
+
+  const photos: ApprovalPhoto[] = item.photos;
 
   const isAlreadyAnswered =
     approval.status === "APPROVED" || approval.status === "REJECTED";
@@ -121,13 +129,13 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
           <div className="mt-4 rounded-2xl border border-dashed border-slate-300 p-4">
             <p className="font-semibold">Fotos</p>
 
-            {item.photos.length === 0 ? (
+            {photos.length === 0 ? (
               <p className="mt-2 text-sm text-slate-500">
                 Es wurden keine Fotos hinterlegt.
               </p>
             ) : (
               <div className="mt-4 grid grid-cols-2 gap-3">
-                {item.photos.map((photo) => (
+                {photos.map((photo: ApprovalPhoto) => (
                   <img
                     key={photo.id}
                     src={photo.fileUrl}

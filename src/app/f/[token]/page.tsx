@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { APP_NAME } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
 
 type ApprovalPageProps = {
@@ -53,7 +54,7 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
       <div className="mx-auto w-full max-w-xl">
         <div className="rounded-3xl bg-white p-5 shadow-sm sm:p-6">
           <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Kundenfreigabe
+            Kundenfreigabe · {APP_NAME}
           </p>
 
           <h1 className="mt-2 text-3xl font-bold tracking-tight">
@@ -188,7 +189,7 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
         </div>
 
         <p className="mt-6 text-center text-xs text-slate-500">
-          Erstellt mit KlarFreigabe
+          Erstellt mit {APP_NAME}
         </p>
       </div>
     </main>

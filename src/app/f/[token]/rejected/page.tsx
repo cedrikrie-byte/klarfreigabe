@@ -1,13 +1,14 @@
 import { notFound } from "next/navigation";
+import { APP_NAME } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
 
-type RejectedPageProps = {
+type ApprovedPageProps = {
   params: Promise<{
     token: string;
   }>;
 };
 
-export default async function RejectedPage({ params }: RejectedPageProps) {
+export default async function ApprovedPage({ params }: ApprovedPageProps) {
   const { token } = await params;
 
   const approval = await prisma.approval.findUnique({
@@ -39,46 +40,40 @@ export default async function RejectedPage({ params }: RejectedPageProps) {
     <main className="min-h-screen bg-slate-100 px-4 py-6 text-slate-950 sm:px-5 sm:py-8">
       <div className="mx-auto flex min-h-[80vh] w-full max-w-xl items-center">
         <div className="w-full rounded-3xl bg-white p-6 text-center shadow-sm">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-200 text-3xl text-slate-950">
-            !
+          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            {APP_NAME}
+          </p>
+
+          <div className="mx-auto mt-5 flex h-16 w-16 items-center justify-center rounded-full bg-slate-950 text-3xl text-white">
+            ✓
           </div>
 
           <h1 className="mt-6 text-3xl font-bold tracking-tight">
-            Rückfrage gesendet
+            Freigabe erteilt
           </h1>
 
           <p className="mt-3 text-slate-600">
-            Vielen Dank. {company.name} wurde informiert, dass Sie die Freigabe
-            noch nicht erteilen möchten oder eine Rückfrage haben.
+            Vielen Dank. {company.name} wurde über Ihre Freigabe informiert.
           </p>
 
           <div className="mt-6 rounded-2xl bg-slate-100 p-4 text-left">
-            <p className="text-sm text-slate-500">Betroffene Zusatzarbeit</p>
+            <p className="text-sm text-slate-500">Freigegebene Zusatzarbeit</p>
             <p className="mt-1 font-semibold">{item.title}</p>
             <p className="mt-2 text-sm text-slate-600">{job.title}</p>
           </div>
 
-          {approval.rejectedAt && (
+          {approval.approvedAt && (
             <div className="mt-4 rounded-2xl bg-slate-100 p-4 text-left">
-              <p className="text-sm text-slate-500">Gesendet am</p>
+              <p className="text-sm text-slate-500">Freigegeben am</p>
               <p className="mt-1 font-semibold">
-                {new Date(approval.rejectedAt).toLocaleString("de-DE")}
-              </p>
-            </div>
-          )}
-
-          {approval.customerComment && (
-            <div className="mt-4 rounded-2xl bg-slate-100 p-4 text-left">
-              <p className="text-sm text-slate-500">Ihre Nachricht</p>
-              <p className="mt-1 text-sm leading-6 text-slate-700">
-                {approval.customerComment}
+                {new Date(approval.approvedAt).toLocaleString("de-DE")}
               </p>
             </div>
           )}
 
           <p className="mt-5 text-xs leading-5 text-slate-500">
-            Der Rückfragestatus wurde gespeichert. Die Werkstatt kann Ihre
-            Nachricht im Auftrag einsehen.
+            Der Freigabestatus wurde gespeichert. Die Werkstatt kann den Nachweis
+            später als PDF dokumentieren.
           </p>
         </div>
       </div>

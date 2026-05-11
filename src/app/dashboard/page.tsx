@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { APP_NAME } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
 
 type DashboardPageProps = {
@@ -144,7 +145,7 @@ export default async function DashboardPage({
         <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-              KlarFreigabe
+              {APP_NAME}
             </p>
             <h1 className="text-xl font-bold">Dashboard</h1>
             <p className="mt-1 text-sm text-slate-400">

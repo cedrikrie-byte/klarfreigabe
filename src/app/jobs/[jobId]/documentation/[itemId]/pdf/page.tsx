@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { APP_NAME } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
 
 type PdfPageProps = {
@@ -69,7 +70,7 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
         <div className="mb-8 flex flex-col gap-3 border-b border-slate-200 pb-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              KlarFreigabe Nachweis
+              {APP_NAME} Nachweis
             </p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">
               Dokumentationsnachweis
@@ -206,7 +207,7 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
 
         <footer className="mt-10 border-t border-slate-200 pt-6 text-xs leading-5 text-slate-500">
           <p>
-            Dieser Nachweis wurde mit KlarFreigabe erstellt. Die Angaben basieren
+            Dieser Nachweis wurde mit {APP_NAME} erstellt. Die Angaben basieren
             auf den im System gespeicherten Auftrags-, Dokumentations- und
             Freigabedaten.
           </p>

@@ -1,75 +1,225 @@
-import { notFound } from "next/navigation";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import { APP_NAME } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
 
-type ApprovedPageProps = {
+type PdfPageProps = {
   params: Promise<{
-    token: string;
+    jobId: string;
+    itemId: string;
   }>;
 };
 
-export default async function ApprovedPage({ params }: ApprovedPageProps) {
-  const { token } = await params;
+type PdfPhoto = {
+  id: string;
+  fileUrl: string;
+  fileName: string | null;
+};
 
-  const approval = await prisma.approval.findUnique({
+export default async function DocumentationPdfPage({ params }: PdfPageProps) {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { jobId, itemId } = await params;
+
+  const item = await prisma.documentationItem.findFirst({
     where: {
-      token,
+      id: itemId,
+      job: {
+        id: jobId,
+        companyId: user.companyId,
+      },
     },
     include: {
-      documentationItem: {
+      photos: true,
+      approval: true,
+      job: {
         include: {
-          job: {
-            include: {
-              company: true,
-            },
-          },
+          company: true,
+          customer: true,
         },
       },
     },
   });
 
-  if (!approval) {
+  if (!item) {
     notFound();
   }
 
-  const item = approval.documentationItem;
   const job = item.job;
   const company = job.company;
+  const customer = job.customer;
+  const photos: PdfPhoto[] = item.photos;
+
+  const statusLabel =
+    item.status === "PENDING"
+      ? "Offen"
+      : item.status === "APPROVED"
+        ? "Freigegeben"
+        : item.status === "REJECTED"
+          ? "Rückfrage / abgelehnt"
+          : item.status;
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-6 text-slate-950 sm:px-5 sm:py-8">
-      <div className="mx-auto flex min-h-[80vh] w-full max-w-xl items-center">
-        <div className="w-full rounded-3xl bg-white p-6 text-center shadow-sm">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-950 text-3xl text-white">
-            ✓
+    <main className="min-h-screen bg-slate-100 px-5 py-8 text-slate-950 print:bg-white print:px-0 print:py-0">
+      <div className="mx-auto w-full max-w-4xl rounded-3xl bg-white p-8 shadow-sm print:rounded-none print:shadow-none">
+        <div className="mb-8 flex flex-col gap-3 border-b border-slate-200 pb-6 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              {APP_NAME} Nachweis
+            </p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight">
+              Dokumentationsnachweis
+            </h1>
           </div>
 
-          <h1 className="mt-6 text-3xl font-bold tracking-tight">
-            Freigabe erteilt
-          </h1>
+          <div className="rounded-2xl bg-slate-100 p-4 text-sm text-slate-700 print:hidden">
+            <p className="font-semibold">PDF speichern</p>
+            <p className="mt-1">
+              Drücke <strong>Strg + P</strong> und wähle dann{" "}
+              <strong>Als PDF speichern</strong>.
+            </p>
+          </div>
+        </div>
 
-          <p className="mt-3 text-slate-600">
-            Vielen Dank. {company.name} wurde über Ihre Freigabe informiert.
+        <section className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl bg-slate-100 p-4">
+            <p className="text-sm text-slate-500">Betrieb</p>
+            <p className="mt-1 font-semibold">{company.name}</p>
+
+            {company.phone && (
+              <p className="mt-1 text-sm text-slate-600">{company.phone}</p>
+            )}
+
+            {company.email && (
+              <p className="mt-1 text-sm text-slate-600">{company.email}</p>
+            )}
+
+            {company.address && (
+              <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">
+                {company.address}
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-2xl bg-slate-100 p-4">
+            <p className="text-sm text-slate-500">Kunde</p>
+            <p className="mt-1 font-semibold">{customer.name}</p>
+
+            {customer.phone && (
+              <p className="mt-1 text-sm text-slate-600">{customer.phone}</p>
+            )}
+
+            {customer.email && (
+              <p className="mt-1 text-sm text-slate-600">{customer.email}</p>
+            )}
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-2xl bg-slate-100 p-4">
+          <p className="text-sm text-slate-500">Auftrag</p>
+          <p className="mt-1 font-semibold">{job.title}</p>
+
+          {(job.vehicle || job.licensePlate) && (
+            <p className="mt-1 text-sm text-slate-600">
+              {job.vehicle}
+              {job.vehicle && job.licensePlate ? " · " : ""}
+              {job.licensePlate}
+            </p>
+          )}
+
+          {job.notes && (
+            <p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-600">
+              {job.notes}
+            </p>
+          )}
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-slate-200 p-4">
+          <p className="text-sm text-slate-500">Dokumentation</p>
+          <h2 className="mt-1 text-2xl font-bold">{item.title}</h2>
+
+          <p className="mt-3 whitespace-pre-line leading-7 text-slate-700">
+            {item.description}
           </p>
 
-          <div className="mt-6 rounded-2xl bg-slate-100 p-4 text-left">
-            <p className="text-sm text-slate-500">Freigegebene Zusatzarbeit</p>
-            <p className="mt-1 font-semibold">{item.title}</p>
-            <p className="mt-2 text-sm text-slate-600">{job.title}</p>
-          </div>
+          {item.priceText && (
+            <p className="mt-4 text-lg font-semibold">
+              Kostenschätzung: {item.priceText}
+            </p>
+          )}
+        </section>
 
-          {approval.approvedAt && (
-            <div className="mt-4 rounded-2xl bg-slate-100 p-4 text-left">
-              <p className="text-sm text-slate-500">Freigegeben am</p>
-              <p className="mt-1 font-semibold">
-                {new Date(approval.approvedAt).toLocaleString("de-DE")}
+        <section className="mt-6 rounded-2xl border border-slate-200 p-4">
+          <p className="text-sm text-slate-500">Freigabestatus</p>
+          <p className="mt-1 text-xl font-bold">{statusLabel}</p>
+
+          {item.approval?.approvedAt && (
+            <p className="mt-2 text-sm text-slate-700">
+              Freigegeben am:{" "}
+              {new Date(item.approval.approvedAt).toLocaleString("de-DE")}
+            </p>
+          )}
+
+          {item.approval?.rejectedAt && (
+            <p className="mt-2 text-sm text-slate-700">
+              Rückfrage gesendet am:{" "}
+              {new Date(item.approval.rejectedAt).toLocaleString("de-DE")}
+            </p>
+          )}
+
+          {item.approval?.customerComment && (
+            <div className="mt-4 rounded-2xl bg-orange-50 p-4">
+              <p className="text-sm font-semibold text-orange-900">
+                Rückfrage vom Kunden
+              </p>
+              <p className="mt-1 whitespace-pre-line text-sm leading-6 text-orange-900">
+                {item.approval.customerComment}
               </p>
             </div>
           )}
+        </section>
 
-          <p className="mt-5 text-xs leading-5 text-slate-500">
-            Der Freigabestatus wurde gespeichert. Die Werkstatt kann den Nachweis
-            später als PDF dokumentieren.
+        <section className="mt-6">
+          <h2 className="text-xl font-bold">Fotos</h2>
+
+          {photos.length === 0 ? (
+            <p className="mt-2 text-sm text-slate-600">
+              Es wurden keine Fotos hinterlegt.
+            </p>
+          ) : (
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              {photos.map((photo: PdfPhoto) => (
+                <img
+                  key={photo.id}
+                  src={photo.fileUrl}
+                  alt={photo.fileName || "Dokumentationsfoto"}
+                  className="h-64 w-full rounded-2xl border border-slate-200 object-cover"
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        <footer className="mt-10 border-t border-slate-200 pt-6 text-xs leading-5 text-slate-500">
+          <p>
+            Dieser Nachweis wurde mit {APP_NAME} erstellt. Die Angaben basieren
+            auf den im System gespeicherten Auftrags-, Dokumentations- und
+            Freigabedaten.
           </p>
+        </footer>
+
+        <div className="mt-6 print:hidden">
+          <Link
+            href={`/jobs/${job.id}`}
+            className="inline-flex rounded-2xl border border-slate-300 px-5 py-3 font-semibold text-slate-950"
+          >
+            Zurück zum Auftrag
+          </Link>
         </div>
       </div>
     </main>

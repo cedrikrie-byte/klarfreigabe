@@ -35,6 +35,16 @@ export default function HomePage() {
               Einloggen
             </Link>
           </div>
+
+          <div className="mt-10 flex flex-wrap gap-4 text-sm text-slate-400">
+            <Link href="/impressum" className="hover:text-white">
+              Impressum
+            </Link>
+
+            <Link href="/datenschutz" className="hover:text-white">
+              Datenschutz
+            </Link>
+          </div>
         </div>
       </div>
     </main>

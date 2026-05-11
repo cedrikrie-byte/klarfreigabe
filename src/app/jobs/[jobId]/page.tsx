@@ -5,6 +5,7 @@ import { getPublicUrl } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
 import CopyLinkButton from "@/components/CopyLinkButton";
 import DeleteDocumentationButton from "@/components/DeleteDocumentationButton";
+import SendApprovalEmailButton from "@/components/SendApprovalEmailButton";
 
 type JobPageProps = {
   params: Promise<{
@@ -300,7 +301,7 @@ export default async function JobPage({ params }: JobPageProps) {
                           )}
                         </div>
 
-                        <div className="grid gap-2 sm:grid-cols-5">
+                        <div className="grid gap-2 sm:grid-cols-6">
                           {item.status === "PENDING" && (
                             <>
                               <Link
@@ -324,6 +325,12 @@ export default async function JobPage({ params }: JobPageProps) {
                               </Link>
 
                               <CopyLinkButton url={approvalUrl} />
+
+                              {job.customer.email && (
+                                <SendApprovalEmailButton
+                                  token={item.approval.token}
+                                />
+                              )}
                             </>
                           )}
 
@@ -334,6 +341,14 @@ export default async function JobPage({ params }: JobPageProps) {
                             PDF-Nachweis öffnen
                           </Link>
                         </div>
+
+                        {item.approval && !job.customer.email && (
+                          <p className="text-sm text-slate-500">
+                            Keine E-Mail-Adresse beim Kunden hinterlegt. Füge
+                            eine E-Mail-Adresse im Auftrag hinzu, um den
+                            Freigabelink per E-Mail zu senden.
+                          </p>
+                        )}
                       </div>
                     </div>
                   );

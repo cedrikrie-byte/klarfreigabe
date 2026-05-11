@@ -154,7 +154,7 @@ export async function POST(request: Request, { params }: SendEmailRouteProps) {
     .join("\n");
 
   const result = await resend.emails.send({
-    from: `${APP_NAME} <onboarding@resend.dev>`,
+    from: `${APP_NAME} <noreply@freigabeonline.de>`,
     to: customer.email,
     subject,
     html,

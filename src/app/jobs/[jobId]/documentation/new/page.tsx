@@ -9,6 +9,35 @@ type SelectedPhoto = {
   previewUrl: string;
 };
 
+type UploadResult = {
+  success?: boolean;
+  error?: string;
+  fileUrl?: string;
+  fileName?: string;
+  mimeType?: string;
+};
+
+type DocumentationResult = {
+  success?: boolean;
+  error?: string;
+  documentationItemId?: string;
+  approvalToken?: string;
+};
+
+async function readJsonSafely<T>(response: Response): Promise<T | null> {
+  const text = await response.text();
+
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
 export default function NewDocumentationPage() {
   const router = useRouter();
   const params = useParams<{ jobId: string }>();
@@ -47,57 +76,77 @@ export default function NewDocumentationPage() {
 
     setIsLoading(true);
 
-    const uploadedPhotos = [];
+    try {
+      const uploadedPhotos = [];
 
-    for (const photo of selectedPhotos) {
-      const formData = new FormData();
-      formData.append("file", photo.file);
+      for (const photo of selectedPhotos) {
+        const formData = new FormData();
+        formData.append("file", photo.file);
 
-      const uploadResponse = await fetch("/api/uploads", {
+        const uploadResponse = await fetch("/api/uploads", {
+          method: "POST",
+          body: formData,
+        });
+
+        const uploadResult = await readJsonSafely<UploadResult>(uploadResponse);
+
+        if (!uploadResponse.ok) {
+          alert(
+            uploadResult?.error ??
+              `Foto konnte nicht hochgeladen werden. Status: ${uploadResponse.status}`
+          );
+          setIsLoading(false);
+          return;
+        }
+
+        if (!uploadResult?.fileUrl) {
+          alert(
+            "Foto konnte nicht hochgeladen werden. Die Upload-API hat keine gültige Antwort gesendet."
+          );
+          setIsLoading(false);
+          return;
+        }
+
+        uploadedPhotos.push({
+          fileUrl: uploadResult.fileUrl,
+          fileName: uploadResult.fileName,
+          mimeType: uploadResult.mimeType,
+        });
+      }
+
+      const response = await fetch("/api/documentation-items", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          jobId: params.jobId,
+          type,
+          title,
+          description,
+          priceText,
+          photos: uploadedPhotos,
+        }),
       });
 
-      const uploadResult = await uploadResponse.json();
+      const result = await readJsonSafely<DocumentationResult>(response);
 
-      if (!uploadResponse.ok) {
-        alert(uploadResult.error ?? "Foto konnte nicht hochgeladen werden.");
+      if (!response.ok) {
+        alert(
+          result?.error ??
+            `Dokumentation konnte nicht gespeichert werden. Status: ${response.status}`
+        );
         setIsLoading(false);
         return;
       }
 
-      uploadedPhotos.push({
-        fileUrl: uploadResult.fileUrl,
-        fileName: uploadResult.fileName,
-        mimeType: uploadResult.mimeType,
-      });
-    }
-
-    const response = await fetch("/api/documentation-items", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        jobId: params.jobId,
-        type,
-        title,
-        description,
-        priceText,
-        photos: uploadedPhotos,
-      }),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      alert(result.error ?? "Dokumentation konnte nicht gespeichert werden.");
+      router.push(`/jobs/${params.jobId}`);
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+      alert("Unerwarteter Fehler beim Speichern der Dokumentation.");
       setIsLoading(false);
-      return;
     }
-
-    router.push(`/jobs/${params.jobId}`);
-    router.refresh();
   }
 
   return (

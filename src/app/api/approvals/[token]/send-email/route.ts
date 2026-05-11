@@ -10,6 +10,15 @@ type SendEmailRouteProps = {
   }>;
 };
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 export async function POST(request: Request, { params }: SendEmailRouteProps) {
   const user = await getCurrentUser();
 
@@ -78,75 +87,105 @@ export async function POST(request: Request, { params }: SendEmailRouteProps) {
   const approvalUrl = getPublicUrl(`/f/${token}`);
   const resend = new Resend(apiKey);
 
-  const subject = `${company.name}: Bitte Zusatzarbeit freigeben`;
+  const safeCustomerName = escapeHtml(customer.name);
+  const safeCompanyName = escapeHtml(company.name);
+  const safeJobTitle = escapeHtml(job.title);
+  const safeItemTitle = escapeHtml(item.title);
+  const safeDescription = escapeHtml(item.description).replaceAll("\n", "<br />");
+  const safePriceText = item.priceText ? escapeHtml(item.priceText) : "";
+  const safeVehicle = job.vehicle ? escapeHtml(job.vehicle) : "";
+  const safeLicensePlate = job.licensePlate ? escapeHtml(job.licensePlate) : "";
+
+  const vehicleLine =
+    safeVehicle || safeLicensePlate
+      ? `${safeVehicle}${safeVehicle && safeLicensePlate ? " · " : ""}${safeLicensePlate}`
+      : "";
+
+  const subject = `${safeCompanyName}: Freigabe für Zusatzarbeit erforderlich`;
 
   const html = `
-    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
-      <h2 style="margin: 0 0 16px;">Freigabe erforderlich</h2>
+    <div style="margin:0; padding:0; background:#f8fafc;">
+      <div style="max-width:640px; margin:0 auto; padding:32px 16px; font-family:Arial, sans-serif; color:#0f172a;">
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; padding:28px;">
+          <p style="margin:0 0 12px; color:#64748b; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;">
+            ${APP_NAME}
+          </p>
 
-      <p>Hallo ${customer.name},</p>
+          <h1 style="margin:0; font-size:26px; line-height:1.25; color:#0f172a;">
+            Bitte Zusatzarbeit prüfen und freigeben
+          </h1>
 
-      <p>
-        ${company.name} bittet um Ihre Freigabe für eine zusätzliche Arbeit.
-      </p>
+          <p style="margin:20px 0 0; font-size:16px; line-height:1.7;">
+            Hallo ${safeCustomerName},
+          </p>
 
-      <div style="margin: 24px 0; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc;">
-        <p style="margin: 0 0 8px; color: #64748b;">Auftrag</p>
-        <p style="margin: 0; font-weight: 700;">${job.title}</p>
-        ${
-          job.vehicle || job.licensePlate
-            ? `<p style="margin: 8px 0 0; color: #475569;">${job.vehicle ?? ""}${
-                job.vehicle && job.licensePlate ? " · " : ""
-              }${job.licensePlate ?? ""}</p>`
-            : ""
-        }
+          <p style="margin:12px 0 0; font-size:16px; line-height:1.7;">
+            ${safeCompanyName} bittet Sie um eine Online-Freigabe für eine zusätzliche Arbeit zu Ihrem Auftrag.
+          </p>
+
+          <div style="margin:24px 0 0; padding:18px; border-radius:14px; background:#f1f5f9;">
+            <p style="margin:0 0 6px; color:#64748b; font-size:13px;">Auftrag</p>
+            <p style="margin:0; font-size:16px; font-weight:700;">${safeJobTitle}</p>
+            ${
+              vehicleLine
+                ? `<p style="margin:8px 0 0; color:#475569; font-size:14px;">${vehicleLine}</p>`
+                : ""
+            }
+          </div>
+
+          <div style="margin:16px 0 0; padding:18px; border:1px solid #e2e8f0; border-radius:14px;">
+            <p style="margin:0 0 6px; color:#64748b; font-size:13px;">Zusatzarbeit</p>
+            <p style="margin:0; font-size:16px; font-weight:700;">${safeItemTitle}</p>
+            <p style="margin:12px 0 0; color:#475569; font-size:15px; line-height:1.7;">${safeDescription}</p>
+            ${
+              safePriceText
+                ? `<p style="margin:14px 0 0; font-size:16px; font-weight:700;">Kostenschätzung: ${safePriceText}</p>`
+                : ""
+            }
+          </div>
+
+          <p style="margin:28px 0 0;">
+            <a href="${approvalUrl}" style="display:inline-block; padding:15px 22px; background:#020617; color:#ffffff; text-decoration:none; border-radius:14px; font-weight:700;">
+              Freigabe jetzt öffnen
+            </a>
+          </p>
+
+          <p style="margin:22px 0 0; color:#64748b; font-size:13px; line-height:1.6;">
+            Falls der Button nicht funktioniert, kopieren Sie diesen Link in Ihren Browser:<br />
+            <a href="${approvalUrl}" style="color:#0f172a;">${approvalUrl}</a>
+          </p>
+
+          <div style="margin:24px 0 0; padding:16px; border-radius:14px; background:#fffbeb; color:#78350f; font-size:13px; line-height:1.6;">
+            Bei Fragen zur Arbeit, zum Preis oder zum Auftrag wenden Sie sich bitte direkt an ${safeCompanyName}.
+          </div>
+        </div>
+
+        <p style="margin:18px 0 0; text-align:center; color:#94a3b8; font-size:12px;">
+          Gesendet mit ${APP_NAME}.
+        </p>
       </div>
-
-      <div style="margin: 24px 0; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px;">
-        <p style="margin: 0 0 8px; color: #64748b;">Empfohlene Zusatzarbeit</p>
-        <p style="margin: 0; font-weight: 700;">${item.title}</p>
-        <p style="margin: 12px 0 0; color: #475569;">${item.description}</p>
-        ${
-          item.priceText
-            ? `<p style="margin: 12px 0 0; font-weight: 700;">Kostenschätzung: ${item.priceText}</p>`
-            : ""
-        }
-      </div>
-
-      <p>
-        <a href="${approvalUrl}" style="display: inline-block; padding: 14px 20px; background: #020617; color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700;">
-          Freigabe öffnen
-        </a>
-      </p>
-
-      <p style="margin-top: 24px; color: #64748b; font-size: 13px;">
-        Falls der Button nicht funktioniert, kopieren Sie diesen Link in Ihren Browser:<br />
-        <a href="${approvalUrl}">${approvalUrl}</a>
-      </p>
-
-      <p style="margin-top: 24px; color: #64748b; font-size: 13px;">
-        Gesendet mit ${APP_NAME}.
-      </p>
     </div>
   `;
 
   const text = [
+    `${APP_NAME}`,
+    "",
+    "Bitte Zusatzarbeit prüfen und freigeben",
+    "",
     `Hallo ${customer.name},`,
     "",
-    `${company.name} bittet um Ihre Freigabe für eine zusätzliche Arbeit.`,
+    `${company.name} bittet Sie um eine Online-Freigabe für eine zusätzliche Arbeit zu Ihrem Auftrag.`,
     "",
     `Auftrag: ${job.title}`,
-    job.vehicle || job.licensePlate
-      ? `Fahrzeug: ${job.vehicle ?? ""}${
-          job.vehicle && job.licensePlate ? " · " : ""
-        }${job.licensePlate ?? ""}`
-      : "",
+    vehicleLine ? `Fahrzeug: ${job.vehicle ?? ""}${job.vehicle && job.licensePlate ? " · " : ""}${job.licensePlate ?? ""}` : "",
     "",
     `Zusatzarbeit: ${item.title}`,
     item.description,
     item.priceText ? `Kostenschätzung: ${item.priceText}` : "",
     "",
     `Freigabe öffnen: ${approvalUrl}`,
+    "",
+    `Bei Fragen zur Arbeit, zum Preis oder zum Auftrag wenden Sie sich bitte direkt an ${company.name}.`,
     "",
     `Gesendet mit ${APP_NAME}.`,
   ]

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { getPublicUrl } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
 import CopyLinkButton from "@/components/CopyLinkButton";
 import DeleteDocumentationButton from "@/components/DeleteDocumentationButton";
@@ -56,7 +57,7 @@ function getStatusLabel(status: string) {
 }
 
 function getApprovalUrl(token: string) {
-  return `http://localhost:3000/f/${token}`;
+  return getPublicUrl(`/f/${token}`);
 }
 
 export default async function JobPage({ params }: JobPageProps) {

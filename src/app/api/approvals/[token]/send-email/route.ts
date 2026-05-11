@@ -101,7 +101,14 @@ export async function POST(request: Request, { params }: SendEmailRouteProps) {
       ? `${safeVehicle}${safeVehicle && safeLicensePlate ? " · " : ""}${safeLicensePlate}`
       : "";
 
-  const subject = `${safeCompanyName}: Freigabe für Zusatzarbeit erforderlich`;
+  const plainVehicleLine =
+    job.vehicle || job.licensePlate
+      ? `${job.vehicle ?? ""}${job.vehicle && job.licensePlate ? " · " : ""}${
+          job.licensePlate ?? ""
+        }`
+      : "";
+
+  const subject = `${company.name}: Freigabe für Zusatzarbeit erforderlich`;
 
   const html = `
     <div style="margin:0; padding:0; background:#f8fafc;">
@@ -156,7 +163,8 @@ export async function POST(request: Request, { params }: SendEmailRouteProps) {
           </p>
 
           <div style="margin:24px 0 0; padding:16px; border-radius:14px; background:#fffbeb; color:#78350f; font-size:13px; line-height:1.6;">
-            Bei Fragen zur Arbeit, zum Preis oder zum Auftrag wenden Sie sich bitte direkt an ${safeCompanyName}.
+            Bei Fragen zur Arbeit, zum Preis oder zum Auftrag können Sie direkt auf diese E-Mail antworten.
+            Ihre Antwort geht an ${safeCompanyName}.
           </div>
         </div>
 
@@ -177,7 +185,7 @@ export async function POST(request: Request, { params }: SendEmailRouteProps) {
     `${company.name} bittet Sie um eine Online-Freigabe für eine zusätzliche Arbeit zu Ihrem Auftrag.`,
     "",
     `Auftrag: ${job.title}`,
-    vehicleLine ? `Fahrzeug: ${job.vehicle ?? ""}${job.vehicle && job.licensePlate ? " · " : ""}${job.licensePlate ?? ""}` : "",
+    plainVehicleLine ? `Fahrzeug: ${plainVehicleLine}` : "",
     "",
     `Zusatzarbeit: ${item.title}`,
     item.description,
@@ -185,20 +193,33 @@ export async function POST(request: Request, { params }: SendEmailRouteProps) {
     "",
     `Freigabe öffnen: ${approvalUrl}`,
     "",
-    `Bei Fragen zur Arbeit, zum Preis oder zum Auftrag wenden Sie sich bitte direkt an ${company.name}.`,
+    `Bei Fragen zur Arbeit, zum Preis oder zum Auftrag können Sie direkt auf diese E-Mail antworten. Ihre Antwort geht an ${company.name}.`,
     "",
     `Gesendet mit ${APP_NAME}.`,
   ]
     .filter(Boolean)
     .join("\n");
 
-  const result = await resend.emails.send({
+  const emailPayload: {
+    from: string;
+    to: string;
+    subject: string;
+    html: string;
+    text: string;
+    replyTo?: string;
+  } = {
     from: `${APP_NAME} <noreply@freigabeonline.de>`,
     to: customer.email,
     subject,
     html,
     text,
-  });
+  };
+
+  if (company.email) {
+    emailPayload.replyTo = company.email;
+  }
+
+  const result = await resend.emails.send(emailPayload);
 
   if (result.error) {
     return NextResponse.json(

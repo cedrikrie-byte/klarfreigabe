@@ -128,7 +128,17 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
           )}
 
           <div className="mt-4 rounded-2xl border border-dashed border-slate-300 p-4">
-            <p className="font-semibold">Fotos</p>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="font-semibold">Fotos</p>
+                {photos.length > 0 && (
+                  <p className="mt-1 text-xs text-slate-500">
+                    {photos.length} Foto{photos.length === 1 ? "" : "s"}{" "}
+                    hinterlegt
+                  </p>
+                )}
+              </div>
+            </div>
 
             {photos.length === 0 ? (
               <p className="mt-2 text-sm text-slate-500">
@@ -136,13 +146,27 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
               </p>
             ) : (
               <div className="mt-4 grid grid-cols-2 gap-3">
-                {photos.map((photo: ApprovalPhoto) => (
-                  <img
+                {photos.map((photo: ApprovalPhoto, index) => (
+                  <a
                     key={photo.id}
-                    src={photo.fileUrl}
-                    alt={photo.fileName || "Dokumentationsfoto"}
-                    className="h-36 w-full rounded-2xl border border-slate-200 object-cover"
-                  />
+                    href={photo.fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 transition active:scale-[0.98]"
+                  >
+                    <div className="relative">
+                      <img
+                        src={photo.fileUrl}
+                        alt={photo.fileName || `Dokumentationsfoto ${index + 1}`}
+                        loading="lazy"
+                        className="h-32 w-full object-cover sm:h-36"
+                      />
+
+                      <span className="absolute left-2 top-2 rounded-full bg-slate-950/80 px-2 py-1 text-xs font-semibold text-white">
+                        {index + 1}
+                      </span>
+                    </div>
+                  </a>
                 ))}
               </div>
             )}
@@ -153,7 +177,7 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
               <form action={`/api/approvals/${token}/approve`} method="post">
                 <button
                   type="submit"
-                  className="w-full rounded-2xl bg-slate-950 px-5 py-4 font-semibold text-white"
+                  className="w-full rounded-2xl bg-slate-950 px-5 py-4 font-semibold text-white transition hover:bg-slate-800 active:scale-[0.98]"
                 >
                   Freigeben
                 </button>
@@ -173,7 +197,7 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
 
                 <button
                   type="submit"
-                  className="w-full rounded-2xl border border-slate-300 px-5 py-4 font-semibold text-slate-950"
+                  className="w-full rounded-2xl border border-slate-300 px-5 py-4 font-semibold text-slate-950 transition hover:bg-slate-100 active:scale-[0.98]"
                 >
                   Ablehnen / Rückfrage senden
                 </button>

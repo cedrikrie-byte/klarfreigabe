@@ -17,6 +17,36 @@ type PdfPhoto = {
   fileName: string | null;
 };
 
+function getTypeLabel(type: string) {
+  if (type === "VEHICLE_INTAKE") return "Fahrzeugannahme";
+  if (type === "ADDITIONAL_WORK") return "Zusatzarbeit";
+  if (type === "DAMAGE_FOUND") return "Schaden entdeckt";
+  if (type === "AFTER_DOCUMENTATION") return "Nachher-Dokumentation";
+  if (type === "OTHER") return "Sonstige Dokumentation";
+
+  return "Dokumentation";
+}
+
+function getStatusLabel(status: string, type: string, approvalRequired: boolean) {
+  if (!approvalRequired && type === "VEHICLE_INTAKE") {
+    return "Annahme dokumentiert";
+  }
+
+  if (!approvalRequired && type === "AFTER_DOCUMENTATION") {
+    return "Nachher dokumentiert";
+  }
+
+  if (!approvalRequired) {
+    return "Dokumentiert";
+  }
+
+  if (status === "PENDING") return "Offen";
+  if (status === "APPROVED") return "Freigegeben";
+  if (status === "REJECTED") return "Rückfrage / abgelehnt";
+
+  return status;
+}
+
 export default async function DocumentationPdfPage({ params }: PdfPageProps) {
   const user = await getCurrentUser();
 
@@ -55,14 +85,13 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
   const customer = job.customer;
   const photos: PdfPhoto[] = item.photos;
 
-  const statusLabel =
-    item.status === "PENDING"
-      ? "Offen"
-      : item.status === "APPROVED"
-        ? "Freigegeben"
-        : item.status === "REJECTED"
-          ? "Rückfrage / abgelehnt"
-          : item.status;
+  const statusLabel = getStatusLabel(
+    item.status,
+    item.type,
+    item.approvalRequired
+  );
+
+  const isVehicleIntake = item.type === "VEHICLE_INTAKE";
 
   return (
     <main className="min-h-screen bg-slate-100 px-5 py-8 text-slate-950 print:bg-white print:px-0 print:py-0">
@@ -140,14 +169,21 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
         </section>
 
         <section className="mt-6 rounded-2xl border border-slate-200 p-4">
-          <p className="text-sm text-slate-500">Dokumentation</p>
+          <p className="text-sm text-slate-500">{getTypeLabel(item.type)}</p>
           <h2 className="mt-1 text-2xl font-bold">{item.title}</h2>
 
-          <p className="mt-3 whitespace-pre-line leading-7 text-slate-700">
-            {item.description}
-          </p>
+          {isVehicleIntake ? (
+            <p className="mt-3 leading-7 text-slate-700">
+              Zustand des Fahrzeugs bei Abgabe dokumentiert. Diese Fotos dienen
+              als Nachweis bei späteren Rückfragen oder Reklamationen.
+            </p>
+          ) : (
+            <p className="mt-3 whitespace-pre-line leading-7 text-slate-700">
+              {item.description}
+            </p>
+          )}
 
-          {item.priceText && (
+          {item.priceText && item.approvalRequired && (
             <p className="mt-4 text-lg font-semibold">
               Kostenschätzung: {item.priceText}
             </p>
@@ -155,8 +191,15 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
         </section>
 
         <section className="mt-6 rounded-2xl border border-slate-200 p-4">
-          <p className="text-sm text-slate-500">Freigabestatus</p>
+          <p className="text-sm text-slate-500">Status</p>
           <p className="mt-1 text-xl font-bold">{statusLabel}</p>
+
+          {item.approval?.emailSentAt && (
+            <p className="mt-2 text-sm text-slate-700">
+              Freigabe-Mail zuletzt gesendet am:{" "}
+              {new Date(item.approval.emailSentAt).toLocaleString("de-DE")}
+            </p>
+          )}
 
           {item.approval?.approvedAt && (
             <p className="mt-2 text-sm text-slate-700">
@@ -185,7 +228,17 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
         </section>
 
         <section className="mt-6">
-          <h2 className="text-xl font-bold">Fotos</h2>
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold">Fotos</h2>
+              {photos.length > 0 && (
+                <p className="mt-1 text-sm text-slate-600">
+                  {photos.length} Foto{photos.length === 1 ? "" : "s"}{" "}
+                  dokumentiert
+                </p>
+              )}
+            </div>
+          </div>
 
           {photos.length === 0 ? (
             <p className="mt-2 text-sm text-slate-600">
@@ -193,13 +246,28 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
             </p>
           ) : (
             <div className="mt-4 grid grid-cols-2 gap-4">
-              {photos.map((photo: PdfPhoto) => (
-                <img
+              {photos.map((photo: PdfPhoto, index) => (
+                <div
                   key={photo.id}
-                  src={photo.fileUrl}
-                  alt={photo.fileName || "Dokumentationsfoto"}
-                  className="h-64 w-full rounded-2xl border border-slate-200 object-cover"
-                />
+                  className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
+                >
+                  <div className="relative">
+                    <img
+                      src={photo.fileUrl}
+                      alt={photo.fileName || `Dokumentationsfoto ${index + 1}`}
+                      loading="lazy"
+                      className="h-52 w-full object-cover print:h-44"
+                    />
+
+                    <span className="absolute left-2 top-2 rounded-full bg-slate-950/80 px-2 py-1 text-xs font-semibold text-white">
+                      {index + 1}
+                    </span>
+                  </div>
+
+                  <div className="p-3 text-xs text-slate-500">
+                    Foto {index + 1}
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -216,7 +284,7 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
         <div className="mt-6 print:hidden">
           <Link
             href={`/jobs/${job.id}`}
-            className="inline-flex rounded-2xl border border-slate-300 px-5 py-3 font-semibold text-slate-950"
+            className="inline-flex rounded-2xl border border-slate-300 px-5 py-3 font-semibold text-slate-950 transition hover:bg-slate-100 active:scale-[0.98]"
           >
             Zurück zum Auftrag
           </Link>

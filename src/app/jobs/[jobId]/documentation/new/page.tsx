@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 
 type SelectedPhoto = {
@@ -29,6 +29,14 @@ type DocumentationResult = {
 const MAX_IMAGE_WIDTH = 1600;
 const JPEG_QUALITY = 0.78;
 
+const allowedTypes = [
+  "VEHICLE_INTAKE",
+  "ADDITIONAL_WORK",
+  "DAMAGE_FOUND",
+  "AFTER_DOCUMENTATION",
+  "OTHER",
+];
+
 async function readJsonSafely<T>(response: Response): Promise<T | null> {
   const text = await response.text();
 
@@ -49,6 +57,14 @@ function formatFileSize(bytes: number) {
   }
 
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function getInitialType(typeFromUrl: string | null) {
+  if (typeFromUrl && allowedTypes.includes(typeFromUrl)) {
+    return typeFromUrl;
+  }
+
+  return "ADDITIONAL_WORK";
 }
 
 function getDefaultTitle(type: string) {
@@ -142,11 +158,14 @@ async function compressImage(file: File): Promise<File> {
 export default function NewDocumentationPage() {
   const router = useRouter();
   const params = useParams<{ jobId: string }>();
+  const searchParams = useSearchParams();
 
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [type, setType] = useState("ADDITIONAL_WORK");
+  const [type, setType] = useState(() =>
+    getInitialType(searchParams.get("type"))
+  );
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priceText, setPriceText] = useState("");
@@ -324,7 +343,9 @@ export default function NewDocumentationPage() {
           </p>
 
           <h1 className="text-3xl font-bold tracking-tight">
-            Dokumentation hinzufügen
+            {isVehicleIntake
+              ? "Fahrzeugannahme dokumentieren"
+              : "Dokumentation hinzufügen"}
           </h1>
 
           <p className="mt-3 text-slate-300">

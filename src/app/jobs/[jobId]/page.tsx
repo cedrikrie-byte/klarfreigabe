@@ -257,12 +257,21 @@ export default async function JobPage({ params }: JobPageProps) {
                 </p>
               </div>
 
-              <Link
-                href={`/jobs/${job.id}/documentation/new`}
-                className="rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-slate-200 active:scale-[0.98] sm:py-2"
-              >
-                Dokumentation hinzufügen
-              </Link>
+              <div className="grid gap-2 sm:flex sm:items-center">
+                <Link
+                  href={`/jobs/${job.id}/documentation/new?type=VEHICLE_INTAKE`}
+                  className="rounded-2xl bg-blue-300 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-blue-200 active:scale-[0.98] sm:py-2"
+                >
+                  Fahrzeugannahme starten
+                </Link>
+
+                <Link
+                  href={`/jobs/${job.id}/documentation/new`}
+                  className="rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-slate-200 active:scale-[0.98] sm:py-2"
+                >
+                  Dokumentation hinzufügen
+                </Link>
+              </div>
             </div>
 
             {job.items.length === 0 ? (

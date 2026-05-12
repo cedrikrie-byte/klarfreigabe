@@ -7,6 +7,8 @@ import { useRef, useState } from "react";
 type SelectedPhoto = {
   file: File;
   previewUrl: string;
+  originalName: string;
+  originalSize: number;
 };
 
 type UploadResult = {
@@ -24,6 +26,9 @@ type DocumentationResult = {
   approvalToken?: string;
 };
 
+const MAX_IMAGE_WIDTH = 1600;
+const JPEG_QUALITY = 0.78;
+
 async function readJsonSafely<T>(response: Response): Promise<T | null> {
   const text = await response.text();
 
@@ -36,6 +41,14 @@ async function readJsonSafely<T>(response: Response): Promise<T | null> {
   } catch {
     return null;
   }
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024 * 1024) {
+    return `${Math.round(bytes / 1024)} KB`;
+  }
+
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
 function getDefaultTitle(type: string) {
@@ -59,6 +72,73 @@ function getDefaultDescription(type: string) {
   return "";
 }
 
+function loadImageFromFile(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Bild konnte nicht gelesen werden."));
+    };
+
+    image.src = objectUrl;
+  });
+}
+
+async function compressImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) {
+    return file;
+  }
+
+  if (file.type === "image/gif" || file.type === "image/svg+xml") {
+    return file;
+  }
+
+  const image = await loadImageFromFile(file);
+
+  const scale = Math.min(1, MAX_IMAGE_WIDTH / image.width);
+  const width = Math.round(image.width * scale);
+  const height = Math.round(image.height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    return file;
+  }
+
+  context.drawImage(image, 0, 0, width, height);
+
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, "image/jpeg", JPEG_QUALITY);
+  });
+
+  if (!blob) {
+    return file;
+  }
+
+  if (blob.size >= file.size) {
+    return file;
+  }
+
+  const baseName = file.name.replace(/\.[^/.]+$/, "");
+  const compressedName = `${baseName}.jpg`;
+
+  return new File([blob], compressedName, {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  });
+}
+
 export default function NewDocumentationPage() {
   const router = useRouter();
   const params = useParams<{ jobId: string }>();
@@ -72,6 +152,7 @@ export default function NewDocumentationPage() {
   const [priceText, setPriceText] = useState("");
   const [selectedPhotos, setSelectedPhotos] = useState<SelectedPhoto[]>([]);
 
+  const [isPreparingPhotos, setIsPreparingPhotos] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const isVehicleIntake = type === "VEHICLE_INTAKE";
@@ -88,17 +169,38 @@ export default function NewDocumentationPage() {
     }
   }
 
-  function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
 
-    const newPhotos = files.map((file) => ({
-      file,
-      previewUrl: URL.createObjectURL(file),
-    }));
-
-    setSelectedPhotos((currentPhotos) => [...currentPhotos, ...newPhotos]);
-
     event.target.value = "";
+
+    if (files.length === 0) {
+      return;
+    }
+
+    setIsPreparingPhotos(true);
+
+    try {
+      const newPhotos: SelectedPhoto[] = [];
+
+      for (const file of files) {
+        const compressedFile = await compressImage(file);
+
+        newPhotos.push({
+          file: compressedFile,
+          previewUrl: URL.createObjectURL(compressedFile),
+          originalName: file.name,
+          originalSize: file.size,
+        });
+      }
+
+      setSelectedPhotos((currentPhotos) => [...currentPhotos, ...newPhotos]);
+    } catch (error) {
+      console.error(error);
+      alert("Ein oder mehrere Fotos konnten nicht vorbereitet werden.");
+    } finally {
+      setIsPreparingPhotos(false);
+    }
   }
 
   function removePhoto(previewUrl: string) {
@@ -204,6 +306,8 @@ export default function NewDocumentationPage() {
     }
   }
 
+  const isBusy = isLoading || isPreparingPhotos;
+
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-white sm:px-6 sm:py-10">
       <div className="mx-auto w-full max-w-2xl">
@@ -241,7 +345,7 @@ export default function NewDocumentationPage() {
             <select
               value={type}
               onChange={(event) => handleTypeChange(event.target.value)}
-              disabled={isLoading}
+              disabled={isBusy}
               className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none disabled:cursor-not-allowed disabled:opacity-60"
             >
               <option value="ADDITIONAL_WORK">Zusatzarbeit</option>
@@ -277,7 +381,7 @@ export default function NewDocumentationPage() {
                       ? "Kratzer an der Stoßstange"
                       : "Bremsscheiben vorne ersetzen"
                   }
-                  disabled={isLoading}
+                  disabled={isBusy}
                   className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
                   required={!isSimplePhotoDocumentation}
                 />
@@ -292,7 +396,7 @@ export default function NewDocumentationPage() {
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
                   placeholder="Bei der Prüfung wurde festgestellt, dass die Bremsscheiben vorne stark verschlissen sind. Wir empfehlen den Austausch."
-                  disabled={isLoading}
+                  disabled={isBusy}
                   className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
                   required={!isSimplePhotoDocumentation}
                 />
@@ -307,7 +411,7 @@ export default function NewDocumentationPage() {
                   value={priceText}
                   onChange={(event) => setPriceText(event.target.value)}
                   placeholder="ca. 320 € inkl. MwSt."
-                  disabled={isLoading}
+                  disabled={isBusy}
                   className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
@@ -322,8 +426,8 @@ export default function NewDocumentationPage() {
             </p>
             <p className="mt-2 text-sm text-slate-400">
               {isVehicleIntake
-                ? "Nimm direkt Fotos auf oder wähle vorhandene Bilder aus. Mehrere Fotos sind möglich."
-                : "Nimm direkt Fotos auf oder wähle ein oder mehrere vorhandene Fotos aus."}
+                ? "Nimm direkt Fotos auf oder wähle vorhandene Bilder aus. Mehrere Fotos sind möglich. Bilder werden vor dem Upload automatisch verkleinert."
+                : "Nimm direkt Fotos auf oder wähle ein oder mehrere vorhandene Fotos aus. Bilder werden vor dem Upload automatisch verkleinert."}
             </p>
 
             <input
@@ -349,7 +453,7 @@ export default function NewDocumentationPage() {
               <button
                 type="button"
                 onClick={() => cameraInputRef.current?.click()}
-                disabled={isLoading}
+                disabled={isBusy}
                 className="rounded-2xl bg-white px-4 py-4 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 📷 Foto aufnehmen
@@ -358,12 +462,18 @@ export default function NewDocumentationPage() {
               <button
                 type="button"
                 onClick={() => galleryInputRef.current?.click()}
-                disabled={isLoading}
+                disabled={isBusy}
                 className="rounded-2xl border border-white/10 px-4 py-4 text-sm font-semibold text-white transition hover:bg-white/10 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 🖼️ Foto auswählen
               </button>
             </div>
+
+            {isPreparingPhotos && (
+              <div className="mt-4 rounded-2xl border border-blue-300/20 bg-blue-300/10 p-4 text-sm font-semibold text-blue-100">
+                Fotos werden vorbereitet und verkleinert...
+              </div>
+            )}
 
             {selectedPhotos.length > 0 && (
               <div className="mt-5">
@@ -391,10 +501,18 @@ export default function NewDocumentationPage() {
                         </span>
                       </div>
 
+                      <div className="border-t border-white/10 px-3 py-2 text-xs text-slate-400">
+                        <p className="truncate">{photo.originalName}</p>
+                        <p>
+                          {formatFileSize(photo.originalSize)} →{" "}
+                          {formatFileSize(photo.file.size)}
+                        </p>
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => removePhoto(photo.previewUrl)}
-                        disabled={isLoading}
+                        disabled={isBusy}
                         className="w-full bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-500/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         Foto entfernen
@@ -414,14 +532,16 @@ export default function NewDocumentationPage() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isBusy}
             className="w-full rounded-2xl bg-white px-5 py-4 font-semibold text-slate-950 transition hover:bg-slate-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading
               ? "Speichert..."
-              : isVehicleIntake
-                ? "Fahrzeugannahme speichern"
-                : "Dokumentation speichern"}
+              : isPreparingPhotos
+                ? "Fotos werden vorbereitet..."
+                : isVehicleIntake
+                  ? "Fahrzeugannahme speichern"
+                  : "Dokumentation speichern"}
           </button>
         </form>
       </div>

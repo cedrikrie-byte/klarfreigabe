@@ -31,6 +31,7 @@ type JobItem = {
     status: string;
     approvedAt: Date | null;
     rejectedAt: Date | null;
+    emailSentAt: Date | null;
     customerComment: string | null;
   } | null;
 };
@@ -255,6 +256,15 @@ export default async function JobPage({ params }: JobPageProps) {
                           {item.priceText && (
                             <p className="mt-2 text-sm font-semibold text-slate-200">
                               Kostenschätzung: {item.priceText}
+                            </p>
+                          )}
+
+                          {item.approval?.emailSentAt && (
+                            <p className="mt-2 text-sm text-blue-300">
+                              Freigabe-Mail zuletzt gesendet am:{" "}
+                              {new Date(
+                                item.approval.emailSentAt
+                              ).toLocaleString("de-DE")}
                             </p>
                           )}
 

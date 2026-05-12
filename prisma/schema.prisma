@@ -165,6 +165,7 @@ model Approval {
 
   approvedAt          DateTime?
   rejectedAt          DateTime?
+  emailSentAt         DateTime?
   customerComment     String?
 
   customerName        String?

@@ -228,6 +228,15 @@ export async function POST(request: Request, { params }: SendEmailRouteProps) {
     );
   }
 
+  await prisma.approval.update({
+    where: {
+      id: approval.id,
+    },
+    data: {
+      emailSentAt: new Date(),
+    },
+  });
+
   return NextResponse.json({
     success: true,
   });

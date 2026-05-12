@@ -13,17 +13,19 @@ type ActionResult = {
   redirectUrl?: string;
 };
 
-async function readJsonSafely<T>(response: Response): Promise<T | null> {
+async function readResponse(response: Response): Promise<ActionResult> {
   const text = await response.text();
 
   if (!text) {
-    return null;
+    return {};
   }
 
   try {
-    return JSON.parse(text) as T;
+    return JSON.parse(text) as ActionResult;
   } catch {
-    return null;
+    return {
+      error: text.slice(0, 500),
+    };
   }
 }
 
@@ -51,10 +53,13 @@ export default function CustomerApprovalActions({
         method: "POST",
       });
 
-      const result = await readJsonSafely<ActionResult>(response);
+      const result = await readResponse(response);
 
       if (!response.ok) {
-        alert(result?.error ?? "Freigabe konnte nicht gespeichert werden.");
+        alert(
+          result.error ??
+            `Freigabe konnte nicht gespeichert werden. Status: ${response.status}`
+        );
         setStatus("error");
 
         setTimeout(() => {
@@ -64,11 +69,15 @@ export default function CustomerApprovalActions({
         return;
       }
 
-      router.push(result?.redirectUrl ?? `/f/${token}/approved`);
+      router.push(result.redirectUrl ?? `/f/${token}/approved`);
       router.refresh();
     } catch (error) {
       console.error(error);
-      alert("Freigabe konnte nicht gespeichert werden.");
+
+      const message =
+        error instanceof Error ? error.message : "Unbekannter Fehler";
+
+      alert(`Freigabe konnte nicht gespeichert werden: ${message}`);
       setStatus("error");
 
       setTimeout(() => {
@@ -93,10 +102,13 @@ export default function CustomerApprovalActions({
         body: formData,
       });
 
-      const result = await readJsonSafely<ActionResult>(response);
+      const result = await readResponse(response);
 
       if (!response.ok) {
-        alert(result?.error ?? "Rückfrage konnte nicht gesendet werden.");
+        alert(
+          result.error ??
+            `Rückfrage konnte nicht gesendet werden. Status: ${response.status}`
+        );
         setStatus("error");
 
         setTimeout(() => {
@@ -106,11 +118,15 @@ export default function CustomerApprovalActions({
         return;
       }
 
-      router.push(result?.redirectUrl ?? `/f/${token}/rejected`);
+      router.push(result.redirectUrl ?? `/f/${token}/rejected`);
       router.refresh();
     } catch (error) {
       console.error(error);
-      alert("Rückfrage konnte nicht gesendet werden.");
+
+      const message =
+        error instanceof Error ? error.message : "Unbekannter Fehler";
+
+      alert(`Rückfrage konnte nicht gesendet werden: ${message}`);
       setStatus("error");
 
       setTimeout(() => {

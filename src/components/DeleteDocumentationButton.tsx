@@ -11,42 +11,66 @@ export default function DeleteDocumentationButton({
   itemId,
 }: DeleteDocumentationButtonProps) {
   const router = useRouter();
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [status, setStatus] = useState<"idle" | "deleting" | "error">("idle");
 
   async function handleDelete() {
-    const confirmed = window.confirm(
-      "Diese offene Dokumentation wirklich löschen?"
-    );
+    if (status === "deleting") {
+      return;
+    }
+
+    const confirmed = window.confirm("Diese Dokumentation wirklich löschen?");
 
     if (!confirmed) {
       return;
     }
 
-    setIsDeleting(true);
+    setStatus("deleting");
 
-    const response = await fetch(`/api/documentation-items/${itemId}`, {
-      method: "DELETE",
-    });
+    try {
+      const response = await fetch(`/api/documentation-items/${itemId}`, {
+        method: "DELETE",
+      });
 
-    const result = await response.json();
+      const result = await response.json();
 
-    if (!response.ok) {
-      alert(result.error ?? "Dokumentation konnte nicht gelöscht werden.");
-      setIsDeleting(false);
-      return;
+      if (!response.ok) {
+        alert(result.error ?? "Dokumentation konnte nicht gelöscht werden.");
+        setStatus("error");
+
+        setTimeout(() => {
+          setStatus("idle");
+        }, 2500);
+
+        return;
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+      alert("Dokumentation konnte nicht gelöscht werden.");
+      setStatus("error");
+
+      setTimeout(() => {
+        setStatus("idle");
+      }, 2500);
     }
-
-    router.refresh();
   }
+
+  const label =
+    status === "deleting"
+      ? "Löscht..."
+      : status === "error"
+        ? "Fehler"
+        : "Löschen";
 
   return (
     <button
       type="button"
       onClick={handleDelete}
-      disabled={isDeleting}
-      className="rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-3 text-center text-sm font-semibold text-red-200 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2"
+      disabled={status === "deleting"}
+      className="rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-3 text-center text-sm font-semibold text-red-200 transition hover:bg-red-500/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:py-2"
     >
-      {isDeleting ? "Lösche..." : "Löschen"}
+      {label}
     </button>
   );
 }

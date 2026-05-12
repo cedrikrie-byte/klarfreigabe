@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { APP_NAME } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
+import CustomerApprovalActions from "@/components/CustomerApprovalActions";
 
 type ApprovalPageProps = {
   params: Promise<{
@@ -172,38 +173,7 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
             )}
           </div>
 
-          {!isAlreadyAnswered && (
-            <div className="mt-6 space-y-3">
-              <form action={`/api/approvals/${token}/approve`} method="post">
-                <button
-                  type="submit"
-                  className="w-full rounded-2xl bg-slate-950 px-5 py-4 font-semibold text-white transition hover:bg-slate-800 active:scale-[0.98]"
-                >
-                  Freigeben
-                </button>
-              </form>
-
-              <form
-                action={`/api/approvals/${token}/reject`}
-                method="post"
-                className="space-y-3"
-              >
-                <textarea
-                  name="customerComment"
-                  rows={4}
-                  placeholder="Optional: Rückfrage oder Grund für die Ablehnung..."
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none placeholder:text-slate-400"
-                />
-
-                <button
-                  type="submit"
-                  className="w-full rounded-2xl border border-slate-300 px-5 py-4 font-semibold text-slate-950 transition hover:bg-slate-100 active:scale-[0.98]"
-                >
-                  Ablehnen / Rückfrage senden
-                </button>
-              </form>
-            </div>
-          )}
+          {!isAlreadyAnswered && <CustomerApprovalActions token={token} />}
 
           <p className="mt-5 text-xs leading-5 text-slate-500">
             Mit der Freigabe bestätigen Sie, dass die oben beschriebene

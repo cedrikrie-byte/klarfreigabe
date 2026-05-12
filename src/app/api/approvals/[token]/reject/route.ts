@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 type RejectRouteProps = {
@@ -23,7 +23,24 @@ export async function POST(request: Request, { params }: RejectRouteProps) {
   });
 
   if (!approval) {
-    redirect(`/f/${token}`);
+    return NextResponse.json(
+      { error: "Freigabe nicht gefunden." },
+      { status: 404 }
+    );
+  }
+
+  if (approval.status === "APPROVED") {
+    return NextResponse.json({
+      success: true,
+      redirectUrl: `/f/${token}/approved`,
+    });
+  }
+
+  if (approval.status === "REJECTED") {
+    return NextResponse.json({
+      success: true,
+      redirectUrl: `/f/${token}/rejected`,
+    });
   }
 
   await prisma.approval.update({
@@ -46,5 +63,8 @@ export async function POST(request: Request, { params }: RejectRouteProps) {
     },
   });
 
-  redirect(`/f/${token}/rejected`);
+  return NextResponse.json({
+    success: true,
+    redirectUrl: `/f/${token}/rejected`,
+  });
 }

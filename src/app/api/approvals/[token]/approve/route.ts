@@ -1,17 +1,17 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
-type ApproveRouteProps = {
+type RejectRouteProps = {
   params: Promise<{
     token: string;
   }>;
 };
 
-export async function POST(
-  request: Request,
-  { params }: ApproveRouteProps
-) {
+export async function POST(request: Request, { params }: RejectRouteProps) {
   const { token } = await params;
+
+  const formData = await request.formData();
+  const customerComment = String(formData.get("customerComment") || "").trim();
 
   const approval = await prisma.approval.findUnique({
     where: {
@@ -31,8 +31,9 @@ export async function POST(
       token,
     },
     data: {
-      status: "APPROVED",
-      approvedAt: new Date(),
+      status: "REJECTED",
+      rejectedAt: new Date(),
+      customerComment: customerComment || null,
     },
   });
 
@@ -41,9 +42,9 @@ export async function POST(
       id: approval.documentationItemId,
     },
     data: {
-      status: "APPROVED",
+      status: "REJECTED",
     },
   });
 
-  redirect(`/f/${token}/approved`);
+  redirect(`/f/${token}/rejected`);
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type SelectedPhoto = {
   file: File;
@@ -38,9 +38,33 @@ async function readJsonSafely<T>(response: Response): Promise<T | null> {
   }
 }
 
+function getDefaultTitle(type: string) {
+  if (type === "VEHICLE_INTAKE") return "Fahrzeugannahme";
+  if (type === "DAMAGE_FOUND") return "Schaden entdeckt";
+  if (type === "AFTER_DOCUMENTATION") return "Nachher-Dokumentation";
+  if (type === "OTHER") return "Dokumentation";
+
+  return "";
+}
+
+function getDefaultDescription(type: string) {
+  if (type === "VEHICLE_INTAKE") {
+    return "Zustand des Fahrzeugs bei Abgabe dokumentiert.";
+  }
+
+  if (type === "AFTER_DOCUMENTATION") {
+    return "Nachher-Zustand dokumentiert.";
+  }
+
+  return "";
+}
+
 export default function NewDocumentationPage() {
   const router = useRouter();
   const params = useParams<{ jobId: string }>();
+
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
   const [type, setType] = useState("ADDITIONAL_WORK");
   const [title, setTitle] = useState("");
@@ -49,6 +73,20 @@ export default function NewDocumentationPage() {
   const [selectedPhotos, setSelectedPhotos] = useState<SelectedPhoto[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
+
+  const isVehicleIntake = type === "VEHICLE_INTAKE";
+  const isSimplePhotoDocumentation =
+    type === "VEHICLE_INTAKE" || type === "AFTER_DOCUMENTATION";
+
+  function handleTypeChange(nextType: string) {
+    setType(nextType);
+
+    if (nextType === "VEHICLE_INTAKE") {
+      setTitle("");
+      setDescription("");
+      setPriceText("");
+    }
+  }
 
   function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -73,6 +111,13 @@ export default function NewDocumentationPage() {
 
   async function handleCreateApproval(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (isVehicleIntake && selectedPhotos.length === 0) {
+      alert(
+        "Bitte füge mindestens ein Foto hinzu, um die Fahrzeugannahme zu dokumentieren."
+      );
+      return;
+    }
 
     setIsLoading(true);
 
@@ -114,6 +159,16 @@ export default function NewDocumentationPage() {
         });
       }
 
+      const finalTitle =
+        isSimplePhotoDocumentation && !title.trim()
+          ? getDefaultTitle(type)
+          : title.trim();
+
+      const finalDescription =
+        isSimplePhotoDocumentation && !description.trim()
+          ? getDefaultDescription(type)
+          : description.trim();
+
       const response = await fetch("/api/documentation-items", {
         method: "POST",
         headers: {
@@ -122,9 +177,9 @@ export default function NewDocumentationPage() {
         body: JSON.stringify({
           jobId: params.jobId,
           type,
-          title,
-          description,
-          priceText,
+          title: finalTitle,
+          description: finalDescription,
+          priceText: isVehicleIntake ? "" : priceText,
           photos: uploadedPhotos,
         }),
       });
@@ -154,7 +209,7 @@ export default function NewDocumentationPage() {
       <div className="mx-auto w-full max-w-2xl">
         <Link
           href={`/jobs/${params.jobId}`}
-          className="text-sm font-semibold text-slate-300"
+          className="inline-flex rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-300 transition active:scale-[0.98]"
         >
           ← Zurück zum Auftrag
         </Link>
@@ -169,8 +224,9 @@ export default function NewDocumentationPage() {
           </h1>
 
           <p className="mt-3 text-slate-300">
-            Beschreibe die Zusatzarbeit, füge Fotos hinzu und erstelle daraus
-            einen Freigabelink für den Kunden.
+            {isVehicleIntake
+              ? "Dokumentiere den Zustand des Fahrzeugs bei Abgabe mit mehreren Fotos. Diese Dokumentation dient später als Nachweis bei Rückfragen oder Reklamationen."
+              : "Beschreibe die Arbeit, füge Fotos hinzu und erstelle bei Bedarf einen Nachweis oder Freigabelink für den Kunden."}
           </p>
         </div>
 
@@ -184,8 +240,9 @@ export default function NewDocumentationPage() {
             </label>
             <select
               value={type}
-              onChange={(event) => setType(event.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none"
+              onChange={(event) => handleTypeChange(event.target.value)}
+              disabled={isLoading}
+              className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none disabled:cursor-not-allowed disabled:opacity-60"
             >
               <option value="ADDITIONAL_WORK">Zusatzarbeit</option>
               <option value="DAMAGE_FOUND">Schaden entdeckt</option>
@@ -195,96 +252,176 @@ export default function NewDocumentationPage() {
             </select>
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-200">
-              Titel
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Bremsscheiben vorne ersetzen"
-              className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500"
-              required
-            />
-          </div>
+          {isVehicleIntake ? (
+            <div className="rounded-2xl border border-blue-300/20 bg-blue-300/10 p-4 text-sm leading-6 text-blue-100">
+              <p className="font-semibold">Fahrzeugannahme ohne Freigabe</p>
+              <p className="mt-2">
+                Für die Fahrzeugannahme brauchst du keinen Titel, keine
+                Beschreibung und keinen Preis. Speichere einfach Fotos vom
+                Zustand bei Abgabe, zum Beispiel Außenansichten, Innenraum,
+                Felgen, vorhandene Kratzer, Dellen oder Schäden.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">
+                  Titel
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder={
+                    type === "DAMAGE_FOUND"
+                      ? "Kratzer an der Stoßstange"
+                      : "Bremsscheiben vorne ersetzen"
+                  }
+                  disabled={isLoading}
+                  className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  required={!isSimplePhotoDocumentation}
+                />
+              </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-200">
-              Beschreibung für den Kunden
-            </label>
-            <textarea
-              rows={5}
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Bei der Prüfung wurde festgestellt, dass die Bremsscheiben vorne stark verschlissen sind. Wir empfehlen den Austausch."
-              className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500"
-              required
-            />
-          </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">
+                  Beschreibung für den Kunden
+                </label>
+                <textarea
+                  rows={5}
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  placeholder="Bei der Prüfung wurde festgestellt, dass die Bremsscheiben vorne stark verschlissen sind. Wir empfehlen den Austausch."
+                  disabled={isLoading}
+                  className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  required={!isSimplePhotoDocumentation}
+                />
+              </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-200">
-              Preis / Kostenschätzung
-            </label>
-            <input
-              type="text"
-              value={priceText}
-              onChange={(event) => setPriceText(event.target.value)}
-              placeholder="ca. 320 € inkl. MwSt."
-              className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500"
-            />
-          </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">
+                  Preis / Kostenschätzung
+                </label>
+                <input
+                  type="text"
+                  value={priceText}
+                  onChange={(event) => setPriceText(event.target.value)}
+                  placeholder="ca. 320 € inkl. MwSt."
+                  disabled={isLoading}
+                  className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+                />
+              </div>
+            </>
+          )}
 
           <div className="rounded-2xl border border-dashed border-white/15 bg-slate-900 p-5">
-            <p className="font-semibold">Fotos hinzufügen</p>
+            <p className="font-semibold">
+              {isVehicleIntake
+                ? "Fahrzeugzustand fotografieren"
+                : "Fotos hinzufügen"}
+            </p>
             <p className="mt-2 text-sm text-slate-400">
-              Wähle ein oder mehrere Fotos aus. Du kannst ausgewählte Fotos vor
-              dem Speichern wieder entfernen.
+              {isVehicleIntake
+                ? "Nimm direkt Fotos auf oder wähle vorhandene Bilder aus. Mehrere Fotos sind möglich."
+                : "Nimm direkt Fotos auf oder wähle ein oder mehrere vorhandene Fotos aus."}
             </p>
 
             <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              multiple
+              onChange={handlePhotoChange}
+              className="hidden"
+            />
+
+            <input
+              ref={galleryInputRef}
               type="file"
               accept="image/*"
               multiple
               onChange={handlePhotoChange}
-              className="mt-4 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-slate-300"
+              className="hidden"
             />
 
-            {selectedPhotos.length > 0 && (
-              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {selectedPhotos.map((photo) => (
-                  <div
-                    key={photo.previewUrl}
-                    className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950"
-                  >
-                    <img
-                      src={photo.previewUrl}
-                      alt="Ausgewähltes Werkstattfoto"
-                      className="h-32 w-full object-cover"
-                    />
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                disabled={isLoading}
+                className="rounded-2xl bg-white px-4 py-4 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                📷 Foto aufnehmen
+              </button>
 
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(photo.previewUrl)}
-                      className="w-full bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-200"
+              <button
+                type="button"
+                onClick={() => galleryInputRef.current?.click()}
+                disabled={isLoading}
+                className="rounded-2xl border border-white/10 px-4 py-4 text-sm font-semibold text-white transition hover:bg-white/10 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                🖼️ Foto auswählen
+              </button>
+            </div>
+
+            {selectedPhotos.length > 0 && (
+              <div className="mt-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-200">
+                    {selectedPhotos.length} Foto
+                    {selectedPhotos.length === 1 ? "" : "s"} ausgewählt
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {selectedPhotos.map((photo, index) => (
+                    <div
+                      key={photo.previewUrl}
+                      className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950"
                     >
-                      Foto entfernen
-                    </button>
-                  </div>
-                ))}
+                      <div className="relative">
+                        <img
+                          src={photo.previewUrl}
+                          alt={`Ausgewähltes Werkstattfoto ${index + 1}`}
+                          className="h-32 w-full object-cover"
+                        />
+                        <span className="absolute left-2 top-2 rounded-full bg-slate-950/80 px-2 py-1 text-xs font-semibold text-white">
+                          {index + 1}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(photo.previewUrl)}
+                        disabled={isLoading}
+                        className="w-full bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-500/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Foto entfernen
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
 
+          {isLoading && (
+            <div className="rounded-2xl border border-blue-300/20 bg-blue-300/10 p-4 text-sm font-semibold text-blue-100">
+              Fotos und Dokumentation werden gespeichert. Bitte kurz warten...
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-2xl bg-white px-5 py-3 font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-2xl bg-white px-5 py-4 font-semibold text-slate-950 transition hover:bg-slate-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading
-              ? "Dokumentation wird gespeichert..."
-              : "Dokumentation speichern"}
+              ? "Speichert..."
+              : isVehicleIntake
+                ? "Fahrzeugannahme speichern"
+                : "Dokumentation speichern"}
           </button>
         </form>
       </div>

@@ -5,6 +5,7 @@ import { getPublicUrl } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
 import CopyLinkButton from "@/components/CopyLinkButton";
 import DeleteDocumentationButton from "@/components/DeleteDocumentationButton";
+import DeleteJobButton from "@/components/DeleteJobButton";
 import SendApprovalEmailButton from "@/components/SendApprovalEmailButton";
 
 type JobPageProps = {
@@ -136,7 +137,7 @@ export default async function JobPage({ params }: JobPageProps) {
     notFound();
   }
 
-  async function deleteJob() {
+  async function deleteJob(formData: FormData) {
     "use server";
 
     const currentUser = await getCurrentUser();
@@ -194,14 +195,10 @@ export default async function JobPage({ params }: JobPageProps) {
                 Auftrag bearbeiten
               </Link>
 
-              <form action={deleteJob}>
-                <button
-                  type="submit"
-                  className="w-full rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-500/20 active:scale-[0.98] sm:w-auto sm:py-2"
-                >
-                  Auftrag löschen
-                </button>
-              </form>
+              <DeleteJobButton
+                action={deleteJob}
+                documentationCount={job.items.length}
+              />
             </div>
           </div>
 

@@ -18,7 +18,9 @@ export default function DeleteDocumentationButton({
       return;
     }
 
-    const confirmed = window.confirm("Diese Dokumentation wirklich löschen?");
+    const confirmed = window.confirm(
+      "Diese Dokumentation wirklich löschen?\n\nFotos, Freigaben und Nachweise zu dieser Dokumentation werden dabei entfernt."
+    );
 
     if (!confirmed) {
       return;

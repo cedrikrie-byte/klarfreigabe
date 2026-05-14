@@ -10,14 +10,23 @@ type Photo = {
 
 type PhotoGalleryProps = {
   photos: Photo[];
+  variant?: "dark" | "light";
 };
 
-export default function PhotoGallery({ photos }: PhotoGalleryProps) {
+export default function PhotoGallery({
+  photos,
+  variant = "dark",
+}: PhotoGalleryProps) {
   const [activePhoto, setActivePhoto] = useState<Photo | null>(null);
 
   if (photos.length === 0) {
     return null;
   }
+
+  const thumbnailClass =
+    variant === "light"
+      ? "overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 text-left transition hover:border-slate-400 active:scale-[0.98]"
+      : "overflow-hidden rounded-2xl border border-white/10 bg-slate-900 text-left transition hover:border-white/30 active:scale-[0.98]";
 
   return (
     <>
@@ -27,7 +36,7 @@ export default function PhotoGallery({ photos }: PhotoGalleryProps) {
             key={photo.id}
             type="button"
             onClick={() => setActivePhoto(photo)}
-            className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900 text-left transition hover:border-white/30 active:scale-[0.98]"
+            className={thumbnailClass}
           >
             <div className="relative">
               <img

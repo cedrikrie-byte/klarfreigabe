@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { APP_NAME } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
 import CustomerApprovalActions from "@/components/CustomerApprovalActions";
+import PhotoGallery from "@/components/PhotoGallery";
 
 type ApprovalPageProps = {
   params: Promise<{
@@ -146,30 +147,7 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
                 Es wurden keine Fotos hinterlegt.
               </p>
             ) : (
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                {photos.map((photo: ApprovalPhoto, index) => (
-                  <a
-                    key={photo.id}
-                    href={photo.fileUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 transition active:scale-[0.98]"
-                  >
-                    <div className="relative">
-                      <img
-                        src={photo.fileUrl}
-                        alt={photo.fileName || `Dokumentationsfoto ${index + 1}`}
-                        loading="lazy"
-                        className="h-32 w-full object-cover sm:h-36"
-                      />
-
-                      <span className="absolute left-2 top-2 rounded-full bg-slate-950/80 px-2 py-1 text-xs font-semibold text-white">
-                        {index + 1}
-                      </span>
-                    </div>
-                  </a>
-                ))}
-              </div>
+              <PhotoGallery photos={photos} variant="light" />
             )}
           </div>
 

@@ -11,6 +11,14 @@ type DashboardPageProps = {
   }>;
 };
 
+type DashboardJobItem = {
+  type: string;
+  approvalRequired: boolean;
+  approval: {
+    status: string;
+  } | null;
+};
+
 type DashboardJob = {
   id: string;
   title: string;
@@ -21,12 +29,59 @@ type DashboardJob = {
     phone: string | null;
     email: string | null;
   };
-  items: {
-    approval: {
-      status: string;
-    } | null;
-  }[];
+  items: DashboardJobItem[];
 };
+
+function getJobSummary(job: DashboardJob) {
+  const hasVehicleIntake = job.items.some(
+    (item) => item.type === "VEHICLE_INTAKE"
+  );
+
+  const openApprovals = job.items.filter(
+    (item) => item.approval?.status === "PENDING"
+  ).length;
+
+  const approvedApprovals = job.items.filter(
+    (item) => item.approval?.status === "APPROVED"
+  ).length;
+
+  const rejectedApprovals = job.items.filter(
+    (item) => item.approval?.status === "REJECTED"
+  ).length;
+
+  if (openApprovals > 0) {
+    return {
+      label: `${openApprovals} offene Freigabe${openApprovals === 1 ? "" : "n"}`,
+      className: "bg-yellow-300/10 text-yellow-300",
+    };
+  }
+
+  if (rejectedApprovals > 0) {
+    return {
+      label: "Rückfrage / abgelehnt",
+      className: "bg-orange-300/10 text-orange-300",
+    };
+  }
+
+  if (approvedApprovals > 0) {
+    return {
+      label: "Freigabe vorhanden",
+      className: "bg-green-300/10 text-green-300",
+    };
+  }
+
+  if (hasVehicleIntake) {
+    return {
+      label: "Annahme dokumentiert",
+      className: "bg-blue-300/10 text-blue-300",
+    };
+  }
+
+  return {
+    label: "Ohne Dokumentation",
+    className: "bg-slate-700 text-slate-200",
+  };
+}
 
 export default async function DashboardPage({
   searchParams,
@@ -48,8 +103,14 @@ export default async function DashboardPage({
     include: {
       customer: true,
       items: {
-        include: {
-          approval: true,
+        select: {
+          type: true,
+          approvalRequired: true,
+          approval: {
+            select: {
+              status: true,
+            },
+          },
         },
       },
     },
@@ -74,6 +135,10 @@ export default async function DashboardPage({
     const matchesSearch =
       !searchQuery || searchText.includes(searchQuery.toLowerCase());
 
+    const hasVehicleIntake = job.items.some(
+      (item) => item.type === "VEHICLE_INTAKE"
+    );
+
     const statuses = job.items
       .map((item) => item.approval?.status)
       .filter(Boolean);
@@ -83,7 +148,8 @@ export default async function DashboardPage({
       (statusFilter === "pending" && statuses.includes("PENDING")) ||
       (statusFilter === "approved" && statuses.includes("APPROVED")) ||
       (statusFilter === "rejected" && statuses.includes("REJECTED")) ||
-      (statusFilter === "none" && statuses.length === 0);
+      (statusFilter === "intake" && hasVehicleIntake) ||
+      (statusFilter === "none" && job.items.length === 0);
 
     return matchesSearch && matchesStatus;
   });
@@ -115,6 +181,14 @@ export default async function DashboardPage({
     0
   );
 
+  const jobsWithoutDocumentation = allJobs.filter(
+    (job) => job.items.length === 0
+  ).length;
+
+  const jobsWithVehicleIntake = allJobs.filter((job) =>
+    job.items.some((item) => item.type === "VEHICLE_INTAKE")
+  ).length;
+
   function buildFilterUrl(nextStatus: string) {
     const params = new URLSearchParams();
 
@@ -135,6 +209,7 @@ export default async function DashboardPage({
     if (statusFilter === "pending") return "Offen";
     if (statusFilter === "approved") return "Freigegeben";
     if (statusFilter === "rejected") return "Rückfrage / abgelehnt";
+    if (statusFilter === "intake") return "Mit Fahrzeugannahme";
     if (statusFilter === "none") return "Ohne Dokumentation";
     return "Alle";
   }
@@ -156,14 +231,14 @@ export default async function DashboardPage({
           <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
             <Link
               href="/jobs/new"
-              className="rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-slate-950 sm:py-2"
+              className="rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-slate-200 active:scale-[0.98] sm:py-2"
             >
               Neuer Auftrag
             </Link>
 
             <Link
               href="/settings"
-              className="rounded-2xl border border-white/10 px-4 py-3 text-center text-sm font-semibold text-white sm:py-2"
+              className="rounded-2xl border border-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10 active:scale-[0.98] sm:py-2"
             >
               Einstellungen
             </Link>
@@ -175,7 +250,7 @@ export default async function DashboardPage({
             >
               <button
                 type="submit"
-                className="w-full rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-white sm:py-2"
+                className="w-full rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10 active:scale-[0.98] sm:py-2"
               >
                 Logout
               </button>
@@ -185,29 +260,76 @@ export default async function DashboardPage({
       </header>
 
       <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-            <p className="text-sm text-slate-400">Offene Freigaben</p>
-            <p className="mt-2 text-4xl font-bold">{openApprovals}</p>
-          </div>
+        <div className="grid gap-4 sm:grid-cols-4">
+          <Link
+            href={buildFilterUrl("pending")}
+            className="rounded-3xl border border-yellow-300/20 bg-yellow-300/10 p-5 transition hover:bg-yellow-300/15 active:scale-[0.98]"
+          >
+            <p className="text-sm text-yellow-100">Offene Freigaben</p>
+            <p className="mt-2 text-4xl font-bold text-yellow-300">
+              {openApprovals}
+            </p>
+          </Link>
+
+          <Link
+            href={buildFilterUrl("intake")}
+            className="rounded-3xl border border-blue-300/20 bg-blue-300/10 p-5 transition hover:bg-blue-300/15 active:scale-[0.98]"
+          >
+            <p className="text-sm text-blue-100">Fahrzeugannahmen</p>
+            <p className="mt-2 text-4xl font-bold text-blue-300">
+              {jobsWithVehicleIntake}
+            </p>
+          </Link>
+
+          <Link
+            href={buildFilterUrl("none")}
+            className="rounded-3xl border border-white/10 bg-white/5 p-5 transition hover:bg-white/10 active:scale-[0.98]"
+          >
+            <p className="text-sm text-slate-400">Ohne Dokumentation</p>
+            <p className="mt-2 text-4xl font-bold">
+              {jobsWithoutDocumentation}
+            </p>
+          </Link>
 
           <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-            <p className="text-sm text-slate-400">Freigegeben</p>
-            <p className="mt-2 text-4xl font-bold">{approvedApprovals}</p>
+            <p className="text-sm text-slate-400">Freigegeben / Rückfragen</p>
+            <p className="mt-2 text-4xl font-bold">
+              {approvedApprovals}
+              <span className="text-2xl text-slate-500"> / </span>
+              {rejectedApprovals}
+            </p>
           </div>
+        </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-            <p className="text-sm text-slate-400">Abgelehnt</p>
-            <p className="mt-2 text-4xl font-bold">{rejectedApprovals}</p>
-          </div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <Link
+            href="/jobs/new"
+            className="rounded-3xl bg-white p-5 font-semibold text-slate-950 transition hover:bg-slate-200 active:scale-[0.98]"
+          >
+            + Neuen Auftrag anlegen
+            <p className="mt-2 text-sm font-normal text-slate-600">
+              Kunde, Fahrzeug und Auftrag erfassen.
+            </p>
+          </Link>
+
+          <Link
+            href={buildFilterUrl("none")}
+            className="rounded-3xl border border-white/10 bg-white/5 p-5 font-semibold text-white transition hover:bg-white/10 active:scale-[0.98]"
+          >
+            Aufträge ohne Dokumentation prüfen
+            <p className="mt-2 text-sm font-normal text-slate-400">
+              Schnell sehen, wo noch keine Annahme oder Dokumentation vorhanden
+              ist.
+            </p>
+          </Link>
         </div>
 
         <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-4 sm:mt-8 sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h2 className="text-lg font-bold">Letzte Aufträge</h2>
+              <h2 className="text-lg font-bold">Aufträge</h2>
               <p className="mt-1 text-sm text-slate-400">
-                Suche und filtere deine Werkstattaufträge.
+                Suche, filtere und öffne deine Werkstattaufträge.
               </p>
             </div>
 
@@ -220,13 +342,13 @@ export default async function DashboardPage({
                 type="search"
                 name="q"
                 defaultValue={searchQuery}
-                placeholder="Auftrag suchen..."
-                className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 sm:w-72"
+                placeholder="Kunde, Fahrzeug, Kennzeichen..."
+                className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 sm:w-80"
               />
 
               <button
                 type="submit"
-                className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950"
+                className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 active:scale-[0.98]"
               >
                 Suchen
               </button>
@@ -236,10 +358,10 @@ export default async function DashboardPage({
           <div className="mt-5 flex gap-2 overflow-x-auto pb-2">
             <Link
               href={buildFilterUrl("all")}
-              className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold ${
+              className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold transition active:scale-[0.98] ${
                 statusFilter === "all"
                   ? "bg-white text-slate-950"
-                  : "border border-white/10 text-white"
+                  : "border border-white/10 text-white hover:bg-white/10"
               }`}
             >
               Alle
@@ -247,10 +369,10 @@ export default async function DashboardPage({
 
             <Link
               href={buildFilterUrl("pending")}
-              className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold ${
+              className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold transition active:scale-[0.98] ${
                 statusFilter === "pending"
                   ? "bg-white text-slate-950"
-                  : "border border-white/10 text-white"
+                  : "border border-white/10 text-white hover:bg-white/10"
               }`}
             >
               Offen
@@ -258,10 +380,10 @@ export default async function DashboardPage({
 
             <Link
               href={buildFilterUrl("approved")}
-              className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold ${
+              className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold transition active:scale-[0.98] ${
                 statusFilter === "approved"
                   ? "bg-white text-slate-950"
-                  : "border border-white/10 text-white"
+                  : "border border-white/10 text-white hover:bg-white/10"
               }`}
             >
               Freigegeben
@@ -269,21 +391,32 @@ export default async function DashboardPage({
 
             <Link
               href={buildFilterUrl("rejected")}
-              className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold ${
+              className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold transition active:scale-[0.98] ${
                 statusFilter === "rejected"
                   ? "bg-white text-slate-950"
-                  : "border border-white/10 text-white"
+                  : "border border-white/10 text-white hover:bg-white/10"
               }`}
             >
               Rückfrage / abgelehnt
             </Link>
 
             <Link
+              href={buildFilterUrl("intake")}
+              className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold transition active:scale-[0.98] ${
+                statusFilter === "intake"
+                  ? "bg-white text-slate-950"
+                  : "border border-white/10 text-white hover:bg-white/10"
+              }`}
+            >
+              Fahrzeugannahme
+            </Link>
+
+            <Link
               href={buildFilterUrl("none")}
-              className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold ${
+              className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold transition active:scale-[0.98] ${
                 statusFilter === "none"
                   ? "bg-white text-slate-950"
-                  : "border border-white/10 text-white"
+                  : "border border-white/10 text-white hover:bg-white/10"
               }`}
             >
               Ohne Dokumentation
@@ -303,7 +436,10 @@ export default async function DashboardPage({
                 </span>
               </p>
 
-              <Link href="/dashboard" className="text-sm font-semibold text-white">
+              <Link
+                href="/dashboard"
+                className="text-sm font-semibold text-white transition hover:text-slate-300 active:scale-[0.98]"
+              >
                 Filter zurücksetzen
               </Link>
             </div>
@@ -318,51 +454,54 @@ export default async function DashboardPage({
             </div>
           ) : (
             <div className="mt-6 space-y-3">
-              {filteredJobs.map((job: DashboardJob) => (
-                <Link
-                  key={job.id}
-                  href={`/jobs/${job.id}`}
-                  className="block rounded-2xl border border-white/10 bg-slate-900 p-4 transition hover:bg-slate-800"
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="font-semibold">{job.title}</p>
-                      <p className="mt-1 text-sm text-slate-400">
-                        {job.customer.name}
-                        {job.vehicle ? ` · ${job.vehicle}` : ""}
-                        {job.licensePlate ? ` · ${job.licensePlate}` : ""}
-                      </p>
-                    </div>
+              {filteredJobs.map((job: DashboardJob) => {
+                const summary = getJobSummary(job);
+                const hasVehicleIntake = job.items.some(
+                  (item) => item.type === "VEHICLE_INTAKE"
+                );
 
-                    <div className="text-sm text-slate-400 sm:text-right">
-                      {job.items.length === 0 ? (
-                        "Keine Dokumentation"
-                      ) : (
-                        <div className="flex flex-col gap-1">
-                          <span>{job.items.length} Dokumentation(en)</span>
-                          <span>
-                            {job.items.some(
-                              (item) => item.approval?.status === "PENDING"
-                            )
-                              ? "Offene Freigabe"
-                              : job.items.some(
-                                    (item) =>
-                                      item.approval?.status === "APPROVED"
-                                  )
-                                ? "Freigegeben"
-                                : job.items.some(
-                                      (item) =>
-                                        item.approval?.status === "REJECTED"
-                                    )
-                                  ? "Rückfrage / abgelehnt"
-                                  : "Keine Freigabe"}
+                return (
+                  <Link
+                    key={job.id}
+                    href={`/jobs/${job.id}`}
+                    className="block rounded-2xl border border-white/10 bg-slate-900 p-4 transition hover:bg-slate-800 active:scale-[0.99]"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="font-semibold">{job.title}</p>
+                        <p className="mt-1 text-sm text-slate-400">
+                          {job.customer.name}
+                          {job.vehicle ? ` · ${job.vehicle}` : ""}
+                          {job.licensePlate ? ` · ${job.licensePlate}` : ""}
+                        </p>
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-semibold ${summary.className}`}
+                          >
+                            {summary.label}
+                          </span>
+
+                          {hasVehicleIntake && (
+                            <span className="rounded-full bg-blue-300/10 px-3 py-1 text-xs font-semibold text-blue-300">
+                              Fahrzeugannahme vorhanden
+                            </span>
+                          )}
+
+                          <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-slate-300">
+                            {job.items.length} Dokumentation
+                            {job.items.length === 1 ? "" : "en"}
                           </span>
                         </div>
-                      )}
+                      </div>
+
+                      <div className="text-sm font-semibold text-slate-300 sm:text-right">
+                        Öffnen →
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>

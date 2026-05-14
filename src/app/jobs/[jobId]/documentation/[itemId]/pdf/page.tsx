@@ -27,6 +27,14 @@ function getTypeLabel(type: string) {
   return "Dokumentation";
 }
 
+function getDocumentTitle(type: string, approvalRequired: boolean) {
+  if (type === "VEHICLE_INTAKE") return "Zustandsnachweis Fahrzeugannahme";
+  if (approvalRequired) return "Freigabe- und Dokumentationsnachweis";
+  if (type === "AFTER_DOCUMENTATION") return "Nachher-Dokumentationsnachweis";
+
+  return "Dokumentationsnachweis";
+}
+
 function getStatusLabel(status: string, type: string, approvalRequired: boolean) {
   if (!approvalRequired && type === "VEHICLE_INTAKE") {
     return "Annahme dokumentiert";
@@ -40,11 +48,35 @@ function getStatusLabel(status: string, type: string, approvalRequired: boolean)
     return "Dokumentiert";
   }
 
-  if (status === "PENDING") return "Offen";
-  if (status === "APPROVED") return "Freigegeben";
+  if (status === "PENDING") return "Offen / noch nicht beantwortet";
+  if (status === "APPROVED") return "Vom Kunden freigegeben";
   if (status === "REJECTED") return "Rückfrage / abgelehnt";
 
   return status;
+}
+
+function getStatusBoxClass(status: string, approvalRequired: boolean) {
+  if (!approvalRequired) {
+    return "border-blue-200 bg-blue-50 text-blue-950";
+  }
+
+  if (status === "APPROVED") {
+    return "border-green-200 bg-green-50 text-green-950";
+  }
+
+  if (status === "REJECTED") {
+    return "border-orange-200 bg-orange-50 text-orange-950";
+  }
+
+  return "border-yellow-200 bg-yellow-50 text-yellow-950";
+}
+
+function formatDate(value: Date | string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  return new Date(value).toLocaleString("de-DE");
 }
 
 export default async function DocumentationPdfPage({ params }: PdfPageProps) {
@@ -85,25 +117,35 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
   const customer = job.customer;
   const photos: PdfPhoto[] = item.photos;
 
+  const isVehicleIntake = item.type === "VEHICLE_INTAKE";
+  const documentTitle = getDocumentTitle(item.type, item.approvalRequired);
   const statusLabel = getStatusLabel(
     item.status,
     item.type,
     item.approvalRequired
   );
+  const statusBoxClass = getStatusBoxClass(item.status, item.approvalRequired);
 
-  const isVehicleIntake = item.type === "VEHICLE_INTAKE";
+  const createdAt = formatDate(item.createdAt);
+  const updatedAt = formatDate(item.updatedAt);
+  const emailSentAt = formatDate(item.approval?.emailSentAt);
+  const approvedAt = formatDate(item.approval?.approvedAt);
+  const rejectedAt = formatDate(item.approval?.rejectedAt);
 
   return (
     <main className="min-h-screen bg-slate-100 px-5 py-8 text-slate-950 print:bg-white print:px-0 print:py-0">
-      <div className="mx-auto w-full max-w-4xl rounded-3xl bg-white p-8 shadow-sm print:rounded-none print:shadow-none">
-        <div className="mb-8 flex flex-col gap-3 border-b border-slate-200 pb-6 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mx-auto w-full max-w-4xl rounded-3xl bg-white p-8 shadow-sm print:rounded-none print:p-6 print:shadow-none">
+        <div className="mb-8 flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
               {APP_NAME} Nachweis
             </p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">
-              Dokumentationsnachweis
+              {documentTitle}
             </h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Erstellt am: {createdAt}
+            </p>
           </div>
 
           <div className="rounded-2xl bg-slate-100 p-4 text-sm text-slate-700 print:hidden">
@@ -116,9 +158,11 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
         </div>
 
         <section className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl bg-slate-100 p-4">
-            <p className="text-sm text-slate-500">Betrieb</p>
-            <p className="mt-1 font-semibold">{company.name}</p>
+          <div className="rounded-2xl bg-slate-100 p-4 print:border print:border-slate-200 print:bg-white">
+            <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              Betrieb
+            </p>
+            <p className="mt-2 font-semibold">{company.name}</p>
 
             {company.phone && (
               <p className="mt-1 text-sm text-slate-600">{company.phone}</p>
@@ -135,9 +179,11 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
             )}
           </div>
 
-          <div className="rounded-2xl bg-slate-100 p-4">
-            <p className="text-sm text-slate-500">Kunde</p>
-            <p className="mt-1 font-semibold">{customer.name}</p>
+          <div className="rounded-2xl bg-slate-100 p-4 print:border print:border-slate-200 print:bg-white">
+            <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              Kunde
+            </p>
+            <p className="mt-2 font-semibold">{customer.name}</p>
 
             {customer.phone && (
               <p className="mt-1 text-sm text-slate-600">{customer.phone}</p>
@@ -149,9 +195,11 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
           </div>
         </section>
 
-        <section className="mt-6 rounded-2xl bg-slate-100 p-4">
-          <p className="text-sm text-slate-500">Auftrag</p>
-          <p className="mt-1 font-semibold">{job.title}</p>
+        <section className="mt-6 rounded-2xl bg-slate-100 p-4 print:border print:border-slate-200 print:bg-white">
+          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Auftrag
+          </p>
+          <p className="mt-2 font-semibold">{job.title}</p>
 
           {(job.vehicle || job.licensePlate) && (
             <p className="mt-1 text-sm text-slate-600">
@@ -169,68 +217,103 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
         </section>
 
         <section className="mt-6 rounded-2xl border border-slate-200 p-4">
-          <p className="text-sm text-slate-500">{getTypeLabel(item.type)}</p>
-          <h2 className="mt-1 text-2xl font-bold">{item.title}</h2>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                {getTypeLabel(item.type)}
+              </p>
+              <h2 className="mt-2 text-2xl font-bold">{item.title}</h2>
+            </div>
+
+            <div
+              className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${statusBoxClass}`}
+            >
+              {statusLabel}
+            </div>
+          </div>
 
           {isVehicleIntake ? (
-            <p className="mt-3 leading-7 text-slate-700">
-              Zustand des Fahrzeugs bei Abgabe dokumentiert. Diese Fotos dienen
-              als Nachweis bei späteren Rückfragen oder Reklamationen.
-            </p>
+            <div className="mt-4 rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+              Der Zustand des Fahrzeugs wurde bei Abgabe dokumentiert. Diese
+              Fotodokumentation dient als Nachweis bei späteren Rückfragen,
+              Reklamationen oder Unklarheiten zum Fahrzeugzustand.
+            </div>
           ) : (
-            <p className="mt-3 whitespace-pre-line leading-7 text-slate-700">
+            <p className="mt-4 whitespace-pre-line leading-7 text-slate-700">
               {item.description}
             </p>
           )}
 
           {item.priceText && item.approvalRequired && (
-            <p className="mt-4 text-lg font-semibold">
-              Kostenschätzung: {item.priceText}
-            </p>
+            <div className="mt-4 rounded-2xl bg-slate-100 p-4">
+              <p className="text-sm text-slate-500">Kostenschätzung</p>
+              <p className="mt-1 text-xl font-bold">{item.priceText}</p>
+            </div>
           )}
         </section>
 
         <section className="mt-6 rounded-2xl border border-slate-200 p-4">
-          <p className="text-sm text-slate-500">Status</p>
-          <p className="mt-1 text-xl font-bold">{statusLabel}</p>
+          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Zeitpunkte und Status
+          </p>
 
-          {item.approval?.emailSentAt && (
-            <p className="mt-2 text-sm text-slate-700">
-              Freigabe-Mail zuletzt gesendet am:{" "}
-              {new Date(item.approval.emailSentAt).toLocaleString("de-DE")}
-            </p>
-          )}
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl bg-slate-100 p-4 print:border print:border-slate-200 print:bg-white">
+              <p className="text-sm text-slate-500">Dokumentation erstellt</p>
+              <p className="mt-1 font-semibold">{createdAt}</p>
+            </div>
 
-          {item.approval?.approvedAt && (
-            <p className="mt-2 text-sm text-slate-700">
-              Freigegeben am:{" "}
-              {new Date(item.approval.approvedAt).toLocaleString("de-DE")}
-            </p>
-          )}
+            <div className="rounded-2xl bg-slate-100 p-4 print:border print:border-slate-200 print:bg-white">
+              <p className="text-sm text-slate-500">Zuletzt aktualisiert</p>
+              <p className="mt-1 font-semibold">{updatedAt}</p>
+            </div>
 
-          {item.approval?.rejectedAt && (
-            <p className="mt-2 text-sm text-slate-700">
-              Rückfrage gesendet am:{" "}
-              {new Date(item.approval.rejectedAt).toLocaleString("de-DE")}
+            {emailSentAt && (
+              <div className="rounded-2xl bg-slate-100 p-4 print:border print:border-slate-200 print:bg-white">
+                <p className="text-sm text-slate-500">
+                  Freigabe-Mail zuletzt gesendet
+                </p>
+                <p className="mt-1 font-semibold">{emailSentAt}</p>
+              </div>
+            )}
+
+            {approvedAt && (
+              <div className="rounded-2xl bg-green-50 p-4 text-green-950 print:border print:border-green-200">
+                <p className="text-sm">Kundenfreigabe erteilt</p>
+                <p className="mt-1 font-semibold">{approvedAt}</p>
+              </div>
+            )}
+
+            {rejectedAt && (
+              <div className="rounded-2xl bg-orange-50 p-4 text-orange-950 print:border print:border-orange-200">
+                <p className="text-sm">Rückfrage / Ablehnung gesendet</p>
+                <p className="mt-1 font-semibold">{rejectedAt}</p>
+              </div>
+            )}
+          </div>
+
+          {item.approvalRequired && (
+            <p className="mt-4 text-sm leading-6 text-slate-600">
+              Dieser Nachweis dokumentiert den gespeicherten Stand der
+              Kundenfreigabe. Bei Freigabe wurde die Durchführung der oben
+              beschriebenen Zusatzarbeit durch den Kunden bestätigt.
             </p>
           )}
 
           {item.approval?.customerComment && (
-            <div className="mt-4 rounded-2xl bg-orange-50 p-4">
-              <p className="text-sm font-semibold text-orange-900">
-                Rückfrage vom Kunden
-              </p>
-              <p className="mt-1 whitespace-pre-line text-sm leading-6 text-orange-900">
+            <div className="mt-4 rounded-2xl bg-orange-50 p-4 text-orange-950 print:border print:border-orange-200">
+              <p className="text-sm font-semibold">Rückfrage vom Kunden</p>
+              <p className="mt-2 whitespace-pre-line text-sm leading-6">
                 {item.approval.customerComment}
               </p>
             </div>
           )}
         </section>
 
-        <section className="mt-6">
+        <section className="mt-6 print:break-before-auto">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold">Fotos</h2>
+              <h2 className="text-xl font-bold">Fotodokumentation</h2>
               {photos.length > 0 && (
                 <p className="mt-1 text-sm text-slate-600">
                   {photos.length} Foto{photos.length === 1 ? "" : "s"}{" "}
@@ -245,27 +328,32 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
               Es wurden keine Fotos hinterlegt.
             </p>
           ) : (
-            <div className="mt-4 grid grid-cols-2 gap-4">
+            <div className="mt-4 grid grid-cols-2 gap-4 print:gap-3">
               {photos.map((photo: PdfPhoto, index) => (
                 <div
                   key={photo.id}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
+                  className="break-inside-avoid overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 print:rounded-xl"
                 >
                   <div className="relative">
                     <img
                       src={photo.fileUrl}
                       alt={photo.fileName || `Dokumentationsfoto ${index + 1}`}
                       loading="lazy"
-                      className="h-52 w-full object-cover print:h-44"
+                      className="h-56 w-full object-cover print:h-44"
                     />
 
                     <span className="absolute left-2 top-2 rounded-full bg-slate-950/80 px-2 py-1 text-xs font-semibold text-white">
-                      {index + 1}
+                      Foto {index + 1}
                     </span>
                   </div>
 
                   <div className="p-3 text-xs text-slate-500">
-                    Foto {index + 1}
+                    <p className="font-semibold text-slate-700">
+                      Foto {index + 1}
+                    </p>
+                    {photo.fileName && (
+                      <p className="mt-1 truncate">{photo.fileName}</p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -276,8 +364,12 @@ export default async function DocumentationPdfPage({ params }: PdfPageProps) {
         <footer className="mt-10 border-t border-slate-200 pt-6 text-xs leading-5 text-slate-500">
           <p>
             Dieser Nachweis wurde mit {APP_NAME} erstellt. Die Angaben basieren
-            auf den im System gespeicherten Auftrags-, Dokumentations- und
-            Freigabedaten.
+            auf den im System gespeicherten Auftrags-, Dokumentations-,
+            Foto- und Freigabedaten.
+          </p>
+          <p className="mt-2">
+            Änderungen an Auftrag, Dokumentation oder Fotos nach Erstellung des
+            Nachweises können den sichtbaren Inhalt dieses Nachweises verändern.
           </p>
         </footer>
 

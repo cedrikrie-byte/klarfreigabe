@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import CopyLinkButton from "@/components/CopyLinkButton";
 import DeleteDocumentationButton from "@/components/DeleteDocumentationButton";
 import DeleteJobButton from "@/components/DeleteJobButton";
+import PhotoGallery from "@/components/PhotoGallery";
 import SendApprovalEmailButton from "@/components/SendApprovalEmailButton";
 
 type JobPageProps = {
@@ -376,31 +377,7 @@ export default async function JobPage({ params }: JobPageProps) {
                             </div>
                           )}
 
-                          {item.photos.length > 0 && (
-                            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                              {item.photos.map((photo: JobPhoto, index) => (
-                                <div
-                                  key={photo.id}
-                                  className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900"
-                                >
-                                  <div className="relative">
-                                    <img
-                                      src={photo.fileUrl}
-                                      alt={
-                                        photo.fileName ||
-                                        `Dokumentationsfoto ${index + 1}`
-                                      }
-                                      loading="lazy"
-                                      className="h-28 w-full object-cover"
-                                    />
-                                    <span className="absolute left-2 top-2 rounded-full bg-slate-950/80 px-2 py-1 text-xs font-semibold text-white">
-                                      {index + 1}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          <PhotoGallery photos={item.photos} />
                         </div>
 
                         <div className="grid gap-2 sm:grid-cols-6">

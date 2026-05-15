@@ -127,6 +127,12 @@ export default async function DashboardPage({
     },
   });
 
+  const customerCount = await prisma.customer.count({
+    where: {
+      companyId: user.companyId,
+    },
+  });
+
   const activeJobs = allJobs.filter((job) => job.status !== "ARCHIVED");
   const archivedJobs = allJobs.filter((job) => job.status === "ARCHIVED");
 
@@ -252,6 +258,13 @@ export default async function DashboardPage({
             </Link>
 
             <Link
+              href="/customers"
+              className="rounded-2xl border border-blue-300/20 bg-blue-300/10 px-4 py-3 text-center text-sm font-semibold text-blue-100 transition hover:bg-blue-300/20 active:scale-[0.98] sm:py-2"
+            >
+              Kundenkartei
+            </Link>
+
+            <Link
               href="/settings"
               className="rounded-2xl border border-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10 active:scale-[0.98] sm:py-2"
             >
@@ -297,6 +310,16 @@ export default async function DashboardPage({
           </Link>
 
           <Link
+            href="/customers"
+            className="rounded-3xl border border-blue-300/20 bg-blue-300/10 p-5 transition hover:bg-blue-300/15 active:scale-[0.98]"
+          >
+            <p className="text-sm text-blue-100">Kunden</p>
+            <p className="mt-2 text-4xl font-bold text-blue-300">
+              {customerCount}
+            </p>
+          </Link>
+
+          <Link
             href={buildFilterUrl("none")}
             className="rounded-3xl border border-white/10 bg-white/5 p-5 transition hover:bg-white/10 active:scale-[0.98]"
           >
@@ -305,15 +328,6 @@ export default async function DashboardPage({
               {jobsWithoutDocumentation}
             </p>
           </Link>
-
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-            <p className="text-sm text-slate-400">Freigegeben / Rückfragen</p>
-            <p className="mt-2 text-4xl font-bold">
-              {approvedApprovals}
-              <span className="text-2xl text-slate-500"> / </span>
-              {rejectedApprovals}
-            </p>
-          </div>
 
           <Link
             href={buildFilterUrl("archived")}
@@ -324,14 +338,24 @@ export default async function DashboardPage({
           </Link>
         </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <Link
             href="/jobs/new"
             className="rounded-3xl bg-white p-5 font-semibold text-slate-950 transition hover:bg-slate-200 active:scale-[0.98]"
           >
             + Neuen Auftrag anlegen
             <p className="mt-2 text-sm font-normal text-slate-600">
-              Kunde, Fahrzeug und Auftrag erfassen.
+              Neuen Kunden, Fahrzeug und Auftrag erfassen.
+            </p>
+          </Link>
+
+          <Link
+            href="/customers"
+            className="rounded-3xl border border-blue-300/20 bg-blue-300/10 p-5 font-semibold text-blue-100 transition hover:bg-blue-300/20 active:scale-[0.98]"
+          >
+            Kundenkartei öffnen
+            <p className="mt-2 text-sm font-normal text-blue-100/80">
+              Bestehenden Kunden finden und Auftrag zur Historie hinzufügen.
             </p>
           </Link>
 
@@ -356,7 +380,7 @@ export default async function DashboardPage({
                   : "Aktive Aufträge"}
               </h2>
               <p className="mt-1 text-sm text-slate-400">
-                Suche, filtere und öffne deine Werkstattaufträge.
+                Suche nach Kunde, Fahrzeug, Kennzeichen oder Auftrag.
               </p>
             </div>
 

@@ -205,7 +205,6 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
   }
 
   const jobs: CustomerJob[] = customer.jobs;
-  const activeJobs = jobs.filter((job) => job.status !== "ARCHIVED");
   const archivedJobs = jobs.filter((job) => job.status === "ARCHIVED");
   const vehicleGroups = groupJobsByVehicle(jobs);
 
@@ -248,12 +247,21 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
               </div>
             </div>
 
-            <Link
-              href={`/customers/${customer.id}/jobs/new`}
-              className="rounded-2xl bg-white px-5 py-3 text-center font-semibold text-slate-950 transition hover:bg-slate-200 active:scale-[0.98]"
-            >
-              Auftrag für Kunden anlegen
-            </Link>
+            <div className="grid gap-2 sm:flex sm:items-center">
+              <Link
+                href={`/customers/${customer.id}/edit`}
+                className="rounded-2xl border border-white/10 px-5 py-3 text-center font-semibold text-white transition hover:bg-white/10 active:scale-[0.98]"
+              >
+                Kunde bearbeiten
+              </Link>
+
+              <Link
+                href={`/customers/${customer.id}/jobs/new`}
+                className="rounded-2xl bg-white px-5 py-3 text-center font-semibold text-slate-950 transition hover:bg-slate-200 active:scale-[0.98]"
+              >
+                Auftrag für Kunden anlegen
+              </Link>
+            </div>
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-4">
@@ -280,13 +288,11 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
         </div>
 
         <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-5">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-xl font-bold">Fahrzeughistorie</h2>
-              <p className="mt-1 text-sm text-slate-400">
-                Aufträge gruppiert nach Kennzeichen oder Fahrzeugangabe.
-              </p>
-            </div>
+          <div>
+            <h2 className="text-xl font-bold">Fahrzeughistorie</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Aufträge gruppiert nach Kennzeichen oder Fahrzeugangabe.
+            </p>
           </div>
 
           {vehicleGroups.length === 0 ? (
@@ -302,6 +308,7 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
                 const activeVehicleJobs = group.jobs.filter(
                   (job) => job.status !== "ARCHIVED"
                 );
+
                 const vehicleIntakes = group.jobs.filter((job) =>
                   job.items.some((item) => item.type === "VEHICLE_INTAKE")
                 ).length;
@@ -425,13 +432,11 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
         </div>
 
         <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-5">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-xl font-bold">Alle Aufträge</h2>
-              <p className="mt-1 text-sm text-slate-400">
-                Chronologische Auftragshistorie dieses Kunden.
-              </p>
-            </div>
+          <div>
+            <h2 className="text-xl font-bold">Alle Aufträge</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Chronologische Auftragshistorie dieses Kunden.
+            </p>
           </div>
 
           {jobs.length === 0 ? (

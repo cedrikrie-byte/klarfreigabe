@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
 const createJobSchema = z.object({
-  customerName: z.string().min(2, "Kundenname ist zu kurz."),
+  customerId: z.string().optional(),
+  customerName: z.string().optional(),
   customerPhone: z.string().optional(),
   customerEmail: z.string().email().optional().or(z.literal("")),
   licensePlate: z.string().optional(),
@@ -12,6 +13,18 @@ const createJobSchema = z.object({
   title: z.string().min(2, "Auftragstitel ist zu kurz."),
   notes: z.string().optional(),
 });
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof z.ZodError) {
+    return error.issues[0]?.message || "Eingaben sind ungültig.";
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Auftrag konnte nicht erstellt werden.";
+}
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -27,35 +40,65 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = createJobSchema.parse(body);
 
-    const customer = await prisma.customer.create({
-      data: {
-        companyId: user.companyId,
-        name: data.customerName,
-        phone: data.customerPhone || null,
-        email: data.customerEmail || null,
-      },
-    });
+    let customerId = data.customerId?.trim() || "";
+
+    if (customerId) {
+      const existingCustomer = await prisma.customer.findFirst({
+        where: {
+          id: customerId,
+          companyId: user.companyId,
+        },
+      });
+
+      if (!existingCustomer) {
+        return NextResponse.json(
+          { error: "Kunde nicht gefunden." },
+          { status: 404 }
+        );
+      }
+    } else {
+      const customerName = data.customerName?.trim() || "";
+
+      if (customerName.length < 2) {
+        return NextResponse.json(
+          { error: "Kundenname ist zu kurz." },
+          { status: 400 }
+        );
+      }
+
+      const customer = await prisma.customer.create({
+        data: {
+          companyId: user.companyId,
+          name: customerName,
+          phone: data.customerPhone?.trim() || null,
+          email: data.customerEmail?.trim().toLowerCase() || null,
+        },
+      });
+
+      customerId = customer.id;
+    }
 
     const job = await prisma.job.create({
       data: {
         companyId: user.companyId,
-        customerId: customer.id,
-        title: data.title,
-        licensePlate: data.licensePlate || null,
-        vehicle: data.vehicle || null,
-        notes: data.notes || null,
+        customerId,
+        title: data.title.trim(),
+        licensePlate: data.licensePlate?.trim().toUpperCase() || null,
+        vehicle: data.vehicle?.trim() || null,
+        notes: data.notes?.trim() || null,
       },
     });
 
     return NextResponse.json({
       success: true,
       jobId: job.id,
+      customerId,
     });
   } catch (error) {
     console.error(error);
 
     return NextResponse.json(
-      { error: "Auftrag konnte nicht erstellt werden." },
+      { error: getErrorMessage(error) },
       { status: 400 }
     );
   }

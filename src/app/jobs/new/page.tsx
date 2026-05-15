@@ -100,12 +100,21 @@ export default function NewJobPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-white sm:px-6 sm:py-10">
       <div className="mx-auto w-full max-w-2xl">
-        <Link
-          href="/dashboard"
-          className="inline-flex rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/10 active:scale-[0.98]"
-        >
-          ← Zurück zum Dashboard
-        </Link>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Link
+            href="/dashboard"
+            className="inline-flex rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/10 active:scale-[0.98]"
+          >
+            ← Zurück zum Dashboard
+          </Link>
+
+          <Link
+            href="/customers"
+            className="inline-flex rounded-2xl border border-blue-300/20 bg-blue-300/10 px-4 py-3 text-sm font-semibold text-blue-100 transition hover:bg-blue-300/20 active:scale-[0.98]"
+          >
+            Bestehenden Kunden suchen
+          </Link>
+        </div>
 
         <div className="mt-6">
           <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
@@ -117,8 +126,8 @@ export default function NewJobPage() {
           </h1>
 
           <p className="mt-3 text-slate-300">
-            Erfasse Kunde und Fahrzeug. Danach kannst du direkt die
-            Fahrzeugannahme mit Fotos starten.
+            Erfasse einen neuen Kunden und ein Fahrzeug. Wenn der Kunde bereits
+            existiert, öffne zuerst die Kundenkartei und lege den Auftrag dort an.
           </p>
         </div>
 
@@ -127,11 +136,18 @@ export default function NewJobPage() {
           className="mt-8 space-y-5 rounded-3xl border border-white/10 bg-white/5 p-5"
         >
           <div className="rounded-2xl border border-blue-300/20 bg-blue-300/10 p-4 text-sm leading-6 text-blue-100">
-            <p className="font-semibold">Empfohlener Ablauf</p>
+            <p className="font-semibold">Neuer Kunde oder bekannter Kunde?</p>
             <p className="mt-1">
-              Erst Auftrag anlegen, dann direkt den Fahrzeugzustand bei Abgabe
-              fotografieren. Das hilft später bei Rückfragen oder Reklamationen.
+              Diese Seite erstellt einen neuen Kunden. Für bekannte Kunden nutze
+              die Kundenkartei, damit alle Aufträge in einer Kundenakte bleiben.
             </p>
+
+            <Link
+              href="/customers"
+              className="mt-4 inline-flex rounded-2xl bg-white px-4 py-3 font-semibold text-slate-950 transition hover:bg-slate-200 active:scale-[0.98]"
+            >
+              Kundenkartei öffnen
+            </Link>
           </div>
 
           <div>
@@ -193,7 +209,7 @@ export default function NewJobPage() {
                 onChange={(event) =>
                   setLicensePlate(event.target.value.toUpperCase())
                 }
-                placeholder="B KF 1234"
+                placeholder="E KF 1234"
                 disabled={isLoading}
                 className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 uppercase text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
               />

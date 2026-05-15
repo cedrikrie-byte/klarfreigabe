@@ -1,116 +1,136 @@
 import Link from "next/link";
-import { APP_NAME, APP_DOMAIN } from "@/lib/branding";
+import { APP_NAME } from "@/lib/branding";
 
 export default function DatenschutzPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-white sm:px-6 sm:py-10">
       <div className="mx-auto w-full max-w-3xl">
-        <Link href="/" className="text-sm font-semibold text-slate-300">
-          ← Zur Startseite
+        <Link
+          href="/"
+          className="inline-flex rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/10 active:scale-[0.98]"
+        >
+          ← Zurück zur Startseite
         </Link>
 
         <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-5 sm:p-8">
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
             {APP_NAME}
           </p>
 
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">
+          <h1 className="text-3xl font-bold tracking-tight">
             Datenschutzerklärung
           </h1>
 
-          <p className="mt-4 rounded-2xl border border-yellow-300/20 bg-yellow-300/10 p-4 text-sm leading-6 text-yellow-100">
-            Platzhalter: Bitte vor Veröffentlichung durch echte Angaben ersetzen
-            und rechtlich prüfen lassen.
-          </p>
-
-          <section className="mt-8 space-y-6 text-sm leading-7 text-slate-200">
-            <div>
+          <div className="mt-8 space-y-8 text-sm leading-7 text-slate-300">
+            <section>
               <h2 className="text-lg font-bold text-white">
                 1. Verantwortlicher
               </h2>
-              <p className="mt-2">
-                Verantwortlich für die Datenverarbeitung auf dieser Website ist:
-              </p>
-              <p className="mt-2">
-                Max Mustermann
-                <br />
-                Musterstraße 1
-                <br />
-                12345 Musterstadt
-                <br />
-                E-Mail: kontakt@{APP_DOMAIN}
-              </p>
-            </div>
 
-            <div>
+              <div className="mt-3 rounded-2xl bg-slate-900 p-4">
+                <p>
+                  Cedrik Riekewald
+                  <br />
+                  Adresse ergänzen
+                  <br />
+                  E-Mail:{" "}
+                  <a
+                    href="mailto:cedrikrie@gmail.com"
+                    className="font-semibold text-white underline underline-offset-4"
+                  >
+                    cedrikrie@gmail.com
+                  </a>
+                </p>
+              </div>
+            </section>
+
+            <section>
               <h2 className="text-lg font-bold text-white">
-                2. Verarbeitung personenbezogener Daten
+                2. Zweck der Verarbeitung
               </h2>
-              <p className="mt-2">
-                {APP_NAME} verarbeitet Daten, die zur Erstellung und Verwaltung
-                von Aufträgen, Kundenfreigaben, Dokumentationen und Nachweisen
-                erforderlich sind. Dazu können insbesondere Namen, Kontaktdaten,
-                Fahrzeugdaten, Auftragsdaten, Fotos, Freigabestatus,
-                Zeitstempel und Kundenkommentare gehören.
-              </p>
-            </div>
 
-            <div>
+              <p>
+                {APP_NAME} dient der digitalen Dokumentation von Werkstattaufträgen,
+                Fahrzeugzuständen, Fotos, Kundenfreigaben und Nachweisen.
+                Dabei können insbesondere Kunden- und Fahrzeugdaten,
+                Kontaktdaten, Auftragsdaten, Fotos sowie Freigabeentscheidungen
+                verarbeitet werden.
+              </p>
+            </section>
+
+            <section>
               <h2 className="text-lg font-bold text-white">
-                3. Zweck der Verarbeitung
+                3. Verarbeitete Daten
               </h2>
-              <p className="mt-2">
-                Die Verarbeitung erfolgt zur digitalen Dokumentation von
-                Werkstatt- oder Serviceaufträgen, zur Einholung von
-                Kundenfreigaben und zur Erstellung von Nachweisen.
-              </p>
-            </div>
 
-            <div>
+              <ul className="mt-3 list-disc space-y-2 pl-5">
+                <li>Name und Kontaktdaten von Kunden</li>
+                <li>Fahrzeugdaten wie Modell oder Kennzeichen</li>
+                <li>Auftrags- und Dokumentationsdaten</li>
+                <li>Fotos zur Fahrzeug- oder Schadensdokumentation</li>
+                <li>Freigabestatus, Zeitpunkte und Kundenkommentare</li>
+                <li>Technische Daten wie IP-bezogene Sicherheitsinformationen</li>
+              </ul>
+            </section>
+
+            <section>
               <h2 className="text-lg font-bold text-white">
                 4. Hosting und technische Dienstleister
               </h2>
-              <p className="mt-2">
-                Die Anwendung wird über technische Dienstleister betrieben.
-                Dazu können Hosting, Datenbankbetrieb, Dateiablage und
-                Bereitstellung der Anwendung gehören. Die konkreten Anbieter,
-                Verträge zur Auftragsverarbeitung und Speicherorte müssen vor
-                dem produktiven Einsatz geprüft und ergänzt werden.
-              </p>
-            </div>
 
-            <div>
+              <p>
+                Die Anwendung kann technische Dienstleister für Hosting,
+                Datenbank, Dateiablage und E-Mail-Versand nutzen. Dazu gehören
+                insbesondere Dienste für Webhosting, Datenbankbetrieb,
+                Bildspeicherung und E-Mail-Zustellung.
+              </p>
+
+              <p className="mt-3">
+                Bitte ergänze hier die final verwendeten Anbieter, zum Beispiel
+                Vercel, Neon, Vercel Blob und Resend, inklusive passender
+                Datenschutzinformationen.
+              </p>
+            </section>
+
+            <section>
               <h2 className="text-lg font-bold text-white">
                 5. Speicherdauer
               </h2>
-              <p className="mt-2">
-                Personenbezogene Daten werden nur so lange gespeichert, wie sie
-                für die genannten Zwecke erforderlich sind oder gesetzliche
-                Aufbewahrungspflichten bestehen.
-              </p>
-            </div>
 
-            <div>
+              <p>
+                Daten werden grundsätzlich so lange gespeichert, wie sie für die
+                Bearbeitung von Aufträgen, Nachweisen, Kundenkommunikation oder
+                gesetzliche Aufbewahrungspflichten erforderlich sind.
+                Archivierte Aufträge bleiben erhalten, bis sie gelöscht werden.
+              </p>
+            </section>
+
+            <section>
               <h2 className="text-lg font-bold text-white">
                 6. Rechte betroffener Personen
               </h2>
-              <p className="mt-2">
+
+              <p>
                 Betroffene Personen haben im Rahmen der gesetzlichen Vorgaben
                 Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung der
-                Verarbeitung, Datenübertragbarkeit und Widerspruch.
+                Verarbeitung, Datenübertragbarkeit sowie Widerspruch gegen
+                bestimmte Verarbeitungen.
               </p>
-            </div>
+            </section>
 
-            <div>
+            <section>
               <h2 className="text-lg font-bold text-white">
                 7. Hinweis
               </h2>
-              <p className="mt-2">
-                Diese Datenschutzerklärung ist ein technischer Platzhalter und
-                ersetzt keine individuelle rechtliche Prüfung.
+
+              <p>
+                Diese Datenschutzerklärung ist als technische Platzhalterseite
+                vorbereitet. Bitte ersetze sie vor einer öffentlichen Nutzung
+                durch eine vollständige, auf deinen tatsächlichen Betrieb und
+                deine eingesetzten Dienste abgestimmte Datenschutzerklärung.
               </p>
-            </div>
-          </section>
+            </section>
+          </div>
         </div>
       </div>
     </main>

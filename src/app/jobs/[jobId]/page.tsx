@@ -3,10 +3,10 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getPublicUrl } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
-import ArchiveJobButton from "@/components/ArchiveJobButton";
 import CopyLinkButton from "@/components/CopyLinkButton";
 import DeleteDocumentationButton from "@/components/DeleteDocumentationButton";
 import DeleteJobButton from "@/components/DeleteJobButton";
+import JobStatusControl from "@/components/JobStatusControl";
 import PhotoGallery from "@/components/PhotoGallery";
 import SendApprovalEmailButton from "@/components/SendApprovalEmailButton";
 
@@ -46,11 +46,12 @@ type JobItem = {
 type JobDetail = {
   id: string;
   title: string;
-  status: string;
+  status: "OPEN" | "IN_PROGRESS" | "COMPLETED" | "ARCHIVED";
   vehicle: string | null;
   licensePlate: string | null;
   notes: string | null;
   customer: {
+    id: string;
     name: string;
     phone: string | null;
     email: string | null;
@@ -142,7 +143,11 @@ export default async function JobPage({ params }: JobPageProps) {
 
   const isArchived = job.status === "ARCHIVED";
 
-  async function archiveJob(formData: FormData) {
+  const openApprovalsCount = job.items.filter(
+    (item) => item.approval?.status === "PENDING"
+  ).length;
+
+  async function deleteJob(formData: FormData) {
     "use server";
 
     const currentUser = await getCurrentUser();
@@ -171,92 +176,29 @@ export default async function JobPage({ params }: JobPageProps) {
       },
     });
 
-    redirect(`/jobs/${jobId}`);
-  }
-
-  async function restoreJob(formData: FormData) {
-    "use server";
-
-    const currentUser = await getCurrentUser();
-
-    if (!currentUser) {
-      redirect("/login");
-    }
-
-    const existingJob = await prisma.job.findFirst({
-      where: {
-        id: jobId,
-        companyId: currentUser.companyId,
-      },
-    });
-
-    if (!existingJob) {
-      redirect("/dashboard");
-    }
-
-    await prisma.job.update({
-      where: {
-        id: jobId,
-      },
-      data: {
-        status: "OPEN",
-      },
-    });
-
-    redirect(`/jobs/${jobId}`);
-  }
-
-  async function deleteJob(formData: FormData) {
-    "use server";
-
-    const currentUser = await getCurrentUser();
-
-    if (!currentUser) {
-      redirect("/login");
-    }
-
-    const existingJob = await prisma.job.findFirst({
-      where: {
-        id: jobId,
-        companyId: currentUser.companyId,
-      },
-    });
-
-    if (!existingJob) {
-      redirect("/dashboard");
-    }
-
-    await prisma.job.delete({
-      where: {
-        id: jobId,
-      },
-    });
-
     redirect("/dashboard");
   }
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-white sm:px-6 sm:py-10">
       <div className="mx-auto w-full max-w-3xl">
-        <Link
-          href={isArchived ? "/dashboard?status=archived" : "/dashboard"}
-          className="inline-flex rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/10 active:scale-[0.98]"
-        >
-          ← Zurück zum Dashboard
-        </Link>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Link
+            href="/dashboard"
+            className="inline-flex rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/10 active:scale-[0.98]"
+          >
+            ← Zurück zum Dashboard
+          </Link>
+
+          <Link
+            href={`/customers/${job.customer.id}`}
+            className="inline-flex rounded-2xl border border-blue-300/20 bg-blue-300/10 px-4 py-3 text-sm font-semibold text-blue-100 transition hover:bg-blue-300/20 active:scale-[0.98]"
+          >
+            Kundenakte öffnen
+          </Link>
+        </div>
 
         <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-5">
-          {isArchived && (
-            <div className="mb-5 rounded-2xl border border-slate-500/30 bg-slate-800 p-4 text-sm leading-6 text-slate-200">
-              <p className="font-semibold text-white">Auftrag ist archiviert</p>
-              <p className="mt-1">
-                Dieser Auftrag ist aus der normalen Übersicht ausgeblendet.
-                Dokumentationen, Fotos, Freigaben und Nachweise bleiben
-                erhalten.
-              </p>
-            </div>
-          )}
-
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
@@ -265,40 +207,31 @@ export default async function JobPage({ params }: JobPageProps) {
               <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
                 {job.title}
               </h1>
-
-              {isArchived && (
-                <span className="mt-3 inline-flex rounded-full bg-slate-700 px-3 py-1 text-sm font-semibold text-slate-200">
-                  Archiviert
-                </span>
-              )}
             </div>
 
             <div className="grid gap-2 sm:flex sm:items-center">
               {!isArchived && (
-                <>
-                  <Link
-                    href={`/jobs/${job.id}/edit`}
-                    className="rounded-2xl border border-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10 active:scale-[0.98] sm:py-2"
-                  >
-                    Auftrag bearbeiten
-                  </Link>
-
-                  <ArchiveJobButton
-                    action={archiveJob}
-                    mode="archive"
-                    documentationCount={job.items.length}
-                  />
-                </>
+                <Link
+                  href={`/jobs/${job.id}/edit`}
+                  className="rounded-2xl border border-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10 active:scale-[0.98] sm:py-2"
+                >
+                  Auftrag bearbeiten
+                </Link>
               )}
 
-              {isArchived && (
-                <ArchiveJobButton
-                  action={restoreJob}
-                  mode="restore"
-                  documentationCount={job.items.length}
-                />
-              )}
+              <DeleteJobButton
+                action={deleteJob}
+                documentationCount={job.items.length}
+              />
             </div>
+          </div>
+
+          <div className="mt-6">
+            <JobStatusControl
+              jobId={job.id}
+              currentStatus={job.status}
+              openApprovalsCount={openApprovalsCount}
+            />
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -339,6 +272,13 @@ export default async function JobPage({ params }: JobPageProps) {
               <p className="mt-1 whitespace-pre-line text-sm leading-6 text-slate-200">
                 {job.notes}
               </p>
+            </div>
+          )}
+
+          {isArchived && (
+            <div className="mt-6 rounded-2xl border border-slate-500/30 bg-slate-800 p-4 text-sm leading-6 text-slate-200">
+              Dieser Auftrag ist archiviert. Dokumentationen und Nachweise
+              bleiben sichtbar, neue Änderungen sind eingeschränkt.
             </div>
           )}
 
@@ -477,7 +417,9 @@ export default async function JobPage({ params }: JobPageProps) {
                             </div>
                           )}
 
-                          <PhotoGallery photos={item.photos} />
+                          {item.photos.length > 0 && (
+                            <PhotoGallery photos={item.photos} />
+                          )}
                         </div>
 
                         <div className="grid gap-2 sm:grid-cols-6">
@@ -498,7 +440,7 @@ export default async function JobPage({ params }: JobPageProps) {
                             <DeleteDocumentationButton itemId={item.id} />
                           )}
 
-                          {isApprovalItem && approval && !isArchived && (
+                          {isApprovalItem && approval && (
                             <>
                               <Link
                                 href={`/f/${approval.token}`}
@@ -509,11 +451,13 @@ export default async function JobPage({ params }: JobPageProps) {
 
                               <CopyLinkButton url={approvalUrl} />
 
-                              {job.customer.email && (
-                                <SendApprovalEmailButton
-                                  token={approval.token}
-                                />
-                              )}
+                              {!isArchived &&
+                                item.status === "PENDING" &&
+                                job.customer.email && (
+                                  <SendApprovalEmailButton
+                                    token={approval.token}
+                                  />
+                                )}
                             </>
                           )}
 
@@ -525,16 +469,13 @@ export default async function JobPage({ params }: JobPageProps) {
                           </Link>
                         </div>
 
-                        {isApprovalItem &&
-                          approval &&
-                          !job.customer.email &&
-                          !isArchived && (
-                            <p className="text-sm text-slate-500">
-                              Keine E-Mail-Adresse beim Kunden hinterlegt. Füge
-                              eine E-Mail-Adresse im Auftrag hinzu, um den
-                              Freigabelink per E-Mail zu senden.
-                            </p>
-                          )}
+                        {isApprovalItem && approval && !job.customer.email && (
+                          <p className="text-sm text-slate-500">
+                            Keine E-Mail-Adresse beim Kunden hinterlegt. Füge
+                            eine E-Mail-Adresse in der Kundenakte hinzu, um den
+                            Freigabelink per E-Mail zu senden.
+                          </p>
+                        )}
                       </div>
                     </div>
                   );
@@ -543,31 +484,13 @@ export default async function JobPage({ params }: JobPageProps) {
             )}
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-6">
             <Link
-              href={isArchived ? "/dashboard?status=archived" : "/dashboard"}
+              href="/dashboard"
               className="block rounded-2xl border border-white/10 px-5 py-3 text-center font-semibold text-white transition hover:bg-white/10 active:scale-[0.98] sm:inline-flex"
             >
               Zur Übersicht
             </Link>
-          </div>
-
-          <div className="mt-6 rounded-2xl border border-red-400/20 bg-red-500/5 p-4">
-            <p className="text-sm font-semibold text-red-200">
-              Gefahrenbereich
-            </p>
-            <p className="mt-1 text-sm leading-6 text-slate-400">
-              Löschen entfernt den Auftrag dauerhaft inklusive Dokumentationen,
-              Fotos, Freigaben und Nachweisen. Für abgeschlossene Aufträge ist
-              Archivieren meistens die bessere Wahl.
-            </p>
-
-            <div className="mt-4">
-              <DeleteJobButton
-                action={deleteJob}
-                documentationCount={job.items.length}
-              />
-            </div>
           </div>
         </div>
       </div>

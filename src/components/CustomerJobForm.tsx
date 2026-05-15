@@ -7,6 +7,8 @@ import { useState } from "react";
 type CustomerJobFormProps = {
   customerId: string;
   customerName: string;
+  initialLicensePlate?: string;
+  initialVehicle?: string;
 };
 
 type CreateJobResult = {
@@ -32,17 +34,21 @@ async function readJsonSafely<T>(response: Response): Promise<T | null> {
 export default function CustomerJobForm({
   customerId,
   customerName,
+  initialLicensePlate = "",
+  initialVehicle = "",
 }: CustomerJobFormProps) {
   const router = useRouter();
 
-  const [licensePlate, setLicensePlate] = useState("");
-  const [vehicle, setVehicle] = useState("");
+  const [licensePlate, setLicensePlate] = useState(initialLicensePlate);
+  const [vehicle, setVehicle] = useState(initialVehicle);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
   const [nextStep, setNextStep] = useState<"job" | "intake">("intake");
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const hasPrefilledVehicle = Boolean(initialLicensePlate || initialVehicle);
 
   async function handleCreateJob(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -111,6 +117,12 @@ export default function CustomerJobForm({
           Der Auftrag wird direkt in der Kundenkartei von{" "}
           <strong>{customerName}</strong> gespeichert.
         </p>
+
+        {hasPrefilledVehicle && (
+          <p className="mt-2">
+            Fahrzeugdaten wurden aus der bisherigen Fahrzeughistorie übernommen.
+          </p>
+        )}
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">

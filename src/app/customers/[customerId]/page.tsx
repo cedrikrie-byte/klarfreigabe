@@ -84,6 +84,27 @@ function getVehicleLabel(job: CustomerJob) {
   return "Ohne Fahrzeugangabe";
 }
 
+function getNewVehicleJobUrl(customerId: string, group: VehicleGroup) {
+  const params = new URLSearchParams();
+
+  const vehicle = group.latestJob.vehicle?.trim() || "";
+  const licensePlate = group.latestJob.licensePlate?.trim().toUpperCase() || "";
+
+  if (vehicle) {
+    params.set("vehicle", vehicle);
+  }
+
+  if (licensePlate) {
+    params.set("licensePlate", licensePlate);
+  }
+
+  const queryString = params.toString();
+
+  return queryString
+    ? `/customers/${customerId}/jobs/new?${queryString}`
+    : `/customers/${customerId}/jobs/new`;
+}
+
 function groupJobsByVehicle(jobs: CustomerJob[]) {
   const groups = new Map<string, VehicleGroup>();
 
@@ -363,10 +384,10 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
                       </div>
 
                       <Link
-                        href={`/customers/${customer.id}/jobs/new`}
-                        className="rounded-2xl border border-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10 active:scale-[0.98] sm:py-2"
+                        href={getNewVehicleJobUrl(customer.id, group)}
+                        className="rounded-2xl border border-blue-300/20 bg-blue-300/10 px-4 py-3 text-center text-sm font-semibold text-blue-100 transition hover:bg-blue-300/20 active:scale-[0.98] sm:py-2"
                       >
-                        Neuer Auftrag
+                        Auftrag für dieses Fahrzeug
                       </Link>
                     </div>
 

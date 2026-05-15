@@ -8,10 +8,15 @@ type NewCustomerJobPageProps = {
   params: Promise<{
     customerId: string;
   }>;
+  searchParams: Promise<{
+    vehicle?: string;
+    licensePlate?: string;
+  }>;
 };
 
 export default async function NewCustomerJobPage({
   params,
+  searchParams,
 }: NewCustomerJobPageProps) {
   const user = await getCurrentUser();
 
@@ -20,6 +25,7 @@ export default async function NewCustomerJobPage({
   }
 
   const { customerId } = await params;
+  const { vehicle, licensePlate } = await searchParams;
 
   const customer = await prisma.customer.findFirst({
     where: {
@@ -31,6 +37,9 @@ export default async function NewCustomerJobPage({
   if (!customer) {
     notFound();
   }
+
+  const initialVehicle = vehicle?.trim() || "";
+  const initialLicensePlate = licensePlate?.trim().toUpperCase() || "";
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-white sm:px-6 sm:py-10">
@@ -57,7 +66,12 @@ export default async function NewCustomerJobPage({
           </p>
         </div>
 
-        <CustomerJobForm customerId={customer.id} customerName={customer.name} />
+        <CustomerJobForm
+          customerId={customer.id}
+          customerName={customer.name}
+          initialVehicle={initialVehicle}
+          initialLicensePlate={initialLicensePlate}
+        />
       </div>
     </main>
   );

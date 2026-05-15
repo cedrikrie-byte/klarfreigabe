@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getPublicUrl } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
+import ArchiveJobButton from "@/components/ArchiveJobButton";
 import CopyLinkButton from "@/components/CopyLinkButton";
 import DeleteDocumentationButton from "@/components/DeleteDocumentationButton";
 import DeleteJobButton from "@/components/DeleteJobButton";
@@ -147,7 +148,7 @@ export default async function JobPage({ params }: JobPageProps) {
     (item) => item.approval?.status === "PENDING"
   ).length;
 
-  async function deleteJob(formData: FormData) {
+  async function archiveJob(formData: FormData) {
     "use server";
 
     const currentUser = await getCurrentUser();
@@ -173,6 +174,35 @@ export default async function JobPage({ params }: JobPageProps) {
       },
       data: {
         status: "ARCHIVED",
+      },
+    });
+
+    redirect("/dashboard");
+  }
+
+  async function deleteJob(formData: FormData) {
+    "use server";
+
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      redirect("/login");
+    }
+
+    const existingJob = await prisma.job.findFirst({
+      where: {
+        id: jobId,
+        companyId: currentUser.companyId,
+      },
+    });
+
+    if (!existingJob) {
+      redirect("/dashboard");
+    }
+
+    await prisma.job.delete({
+      where: {
+        id: jobId,
       },
     });
 
@@ -217,6 +247,13 @@ export default async function JobPage({ params }: JobPageProps) {
                 >
                   Auftrag bearbeiten
                 </Link>
+              )}
+
+              {!isArchived && (
+                <ArchiveJobButton
+                  action={archiveJob}
+                  documentationCount={job.items.length}
+                />
               )}
 
               <DeleteJobButton

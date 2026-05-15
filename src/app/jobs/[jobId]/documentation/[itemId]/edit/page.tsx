@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import DocumentationPhotoManager from "@/components/DocumentationPhotoManager";
 import FormSubmitButton from "@/components/FormSubmitButton";
-import PhotoGallery from "@/components/PhotoGallery";
 
 type EditDocumentationPageProps = {
   params: Promise<{
@@ -73,7 +73,8 @@ export default async function EditDocumentationPage({
   }
 
   const photos: EditPhoto[] = item.photos;
-  const canEdit = canEditItem(item.status, item.approvalRequired);
+  const isArchived = item.job.status === "ARCHIVED";
+  const canEdit = canEditItem(item.status, item.approvalRequired) && !isArchived;
   const isVehicleIntake = item.type === "VEHICLE_INTAKE";
   const isSimplePhotoDocumentation =
     item.type === "VEHICLE_INTAKE" || item.type === "AFTER_DOCUMENTATION";
@@ -101,6 +102,7 @@ export default async function EditDocumentationPage({
       },
       include: {
         approval: true,
+        job: true,
       },
     });
 
@@ -108,10 +110,9 @@ export default async function EditDocumentationPage({
       redirect(`/jobs/${jobId}`);
     }
 
-    const existingCanEdit = canEditItem(
-      existingItem.status,
-      existingItem.approvalRequired
-    );
+    const existingCanEdit =
+      canEditItem(existingItem.status, existingItem.approvalRequired) &&
+      existingItem.job.status !== "ARCHIVED";
 
     if (!existingCanEdit) {
       redirect(`/jobs/${jobId}`);
@@ -173,7 +174,14 @@ export default async function EditDocumentationPage({
           </p>
         </div>
 
-        {!canEdit && (
+        {isArchived && (
+          <div className="mt-6 rounded-2xl border border-slate-500/30 bg-slate-800 p-4 text-sm leading-6 text-slate-200">
+            Dieser Auftrag ist archiviert. Dokumentationen und Fotos können
+            angesehen, aber nicht bearbeitet werden.
+          </div>
+        )}
+
+        {!canEdit && !isArchived && (
           <div className="mt-6 rounded-2xl border border-yellow-300/20 bg-yellow-300/10 p-4 text-sm leading-6 text-yellow-100">
             Diese Dokumentation wurde bereits beantwortet und kann nicht mehr
             bearbeitet werden. Dadurch bleiben Freigabe und Nachweis
@@ -248,19 +256,11 @@ export default async function EditDocumentationPage({
             </>
           )}
 
-          {photos.length > 0 && (
-            <div className="rounded-2xl border border-dashed border-white/15 bg-slate-900 p-5">
-              <p className="font-semibold">Vorhandene Fotos</p>
-
-              <PhotoGallery photos={photos} />
-
-              <p className="mt-3 text-sm text-slate-400">
-                Fotos können aktuell angesehen und über die Dokumentation
-                gelöscht werden. Einzelnes Nachsortieren oder Austauschen machen
-                wir später als eigenen Block.
-              </p>
-            </div>
-          )}
+          <DocumentationPhotoManager
+            itemId={item.id}
+            photos={photos}
+            canEdit={canEdit}
+          />
 
           <FormSubmitButton
             idleLabel={

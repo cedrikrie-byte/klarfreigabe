@@ -22,6 +22,7 @@ type DashboardJobItem = {
 type DashboardJob = {
   id: string;
   title: string;
+  status: string;
   vehicle: string | null;
   licensePlate: string | null;
   customer: {
@@ -33,6 +34,13 @@ type DashboardJob = {
 };
 
 function getJobSummary(job: DashboardJob) {
+  if (job.status === "ARCHIVED") {
+    return {
+      label: "Archiviert",
+      className: "bg-slate-700 text-slate-200",
+    };
+  }
+
   const hasVehicleIntake = job.items.some(
     (item) => item.type === "VEHICLE_INTAKE"
   );
@@ -119,6 +127,9 @@ export default async function DashboardPage({
     },
   });
 
+  const activeJobs = allJobs.filter((job) => job.status !== "ARCHIVED");
+  const archivedJobs = allJobs.filter((job) => job.status === "ARCHIVED");
+
   const filteredJobs = allJobs.filter((job: DashboardJob) => {
     const searchText = [
       job.title,
@@ -144,24 +155,27 @@ export default async function DashboardPage({
       .filter(Boolean);
 
     const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "pending" && statuses.includes("PENDING")) ||
-      (statusFilter === "approved" && statuses.includes("APPROVED")) ||
-      (statusFilter === "rejected" && statuses.includes("REJECTED")) ||
-      (statusFilter === "intake" && hasVehicleIntake) ||
-      (statusFilter === "none" && job.items.length === 0);
+      statusFilter === "archived"
+        ? job.status === "ARCHIVED"
+        : job.status !== "ARCHIVED" &&
+          (statusFilter === "all" ||
+            (statusFilter === "pending" && statuses.includes("PENDING")) ||
+            (statusFilter === "approved" && statuses.includes("APPROVED")) ||
+            (statusFilter === "rejected" && statuses.includes("REJECTED")) ||
+            (statusFilter === "intake" && hasVehicleIntake) ||
+            (statusFilter === "none" && job.items.length === 0));
 
     return matchesSearch && matchesStatus;
   });
 
-  const openApprovals = allJobs.reduce((count: number, job: DashboardJob) => {
+  const openApprovals = activeJobs.reduce((count: number, job: DashboardJob) => {
     return (
       count +
       job.items.filter((item) => item.approval?.status === "PENDING").length
     );
   }, 0);
 
-  const approvedApprovals = allJobs.reduce(
+  const approvedApprovals = activeJobs.reduce(
     (count: number, job: DashboardJob) => {
       return (
         count +
@@ -171,7 +185,7 @@ export default async function DashboardPage({
     0
   );
 
-  const rejectedApprovals = allJobs.reduce(
+  const rejectedApprovals = activeJobs.reduce(
     (count: number, job: DashboardJob) => {
       return (
         count +
@@ -181,11 +195,11 @@ export default async function DashboardPage({
     0
   );
 
-  const jobsWithoutDocumentation = allJobs.filter(
+  const jobsWithoutDocumentation = activeJobs.filter(
     (job) => job.items.length === 0
   ).length;
 
-  const jobsWithVehicleIntake = allJobs.filter((job) =>
+  const jobsWithVehicleIntake = activeJobs.filter((job) =>
     job.items.some((item) => item.type === "VEHICLE_INTAKE")
   ).length;
 
@@ -211,7 +225,8 @@ export default async function DashboardPage({
     if (statusFilter === "rejected") return "Rückfrage / abgelehnt";
     if (statusFilter === "intake") return "Mit Fahrzeugannahme";
     if (statusFilter === "none") return "Ohne Dokumentation";
-    return "Alle";
+    if (statusFilter === "archived") return "Archiviert";
+    return "Alle aktiven";
   }
 
   return (
@@ -260,7 +275,7 @@ export default async function DashboardPage({
       </header>
 
       <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="grid gap-4 sm:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-5">
           <Link
             href={buildFilterUrl("pending")}
             className="rounded-3xl border border-yellow-300/20 bg-yellow-300/10 p-5 transition hover:bg-yellow-300/15 active:scale-[0.98]"
@@ -299,6 +314,14 @@ export default async function DashboardPage({
               {rejectedApprovals}
             </p>
           </div>
+
+          <Link
+            href={buildFilterUrl("archived")}
+            className="rounded-3xl border border-white/10 bg-white/5 p-5 transition hover:bg-white/10 active:scale-[0.98]"
+          >
+            <p className="text-sm text-slate-400">Archiviert</p>
+            <p className="mt-2 text-4xl font-bold">{archivedJobs.length}</p>
+          </Link>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -327,7 +350,11 @@ export default async function DashboardPage({
         <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-4 sm:mt-8 sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h2 className="text-lg font-bold">Aufträge</h2>
+              <h2 className="text-lg font-bold">
+                {statusFilter === "archived"
+                  ? "Archivierte Aufträge"
+                  : "Aktive Aufträge"}
+              </h2>
               <p className="mt-1 text-sm text-slate-400">
                 Suche, filtere und öffne deine Werkstattaufträge.
               </p>
@@ -364,7 +391,7 @@ export default async function DashboardPage({
                   : "border border-white/10 text-white hover:bg-white/10"
               }`}
             >
-              Alle
+              Aktive
             </Link>
 
             <Link
@@ -420,6 +447,17 @@ export default async function DashboardPage({
               }`}
             >
               Ohne Dokumentation
+            </Link>
+
+            <Link
+              href={buildFilterUrl("archived")}
+              className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold transition active:scale-[0.98] ${
+                statusFilter === "archived"
+                  ? "bg-white text-slate-950"
+                  : "border border-white/10 text-white hover:bg-white/10"
+              }`}
+            >
+              Archiviert
             </Link>
           </div>
 

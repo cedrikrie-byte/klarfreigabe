@@ -60,6 +60,14 @@ type JobDetail = {
   items: JobItem[];
 };
 
+function formatDateTime(date: Date) {
+  return new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin",
+    dateStyle: "short",
+    timeStyle: "medium",
+  }).format(new Date(date));
+}
+
 function getStatusLabel(status: string, type: string, approvalRequired: boolean) {
   if (!approvalRequired && type === "VEHICLE_INTAKE") {
     return "Annahme dokumentiert";
@@ -419,27 +427,21 @@ export default async function JobPage({ params }: JobPageProps) {
                           {approval?.emailSentAt && (
                             <p className="mt-2 text-sm text-blue-300">
                               Freigabe-Mail zuletzt gesendet am:{" "}
-                              {new Date(approval.emailSentAt).toLocaleString(
-                                "de-DE"
-                              )}
+                              {formatDateTime(approval.emailSentAt)}
                             </p>
                           )}
 
                           {approval?.approvedAt && (
                             <p className="mt-2 text-sm text-green-300">
                               Freigegeben am:{" "}
-                              {new Date(approval.approvedAt).toLocaleString(
-                                "de-DE"
-                              )}
+                              {formatDateTime(approval.approvedAt)}
                             </p>
                           )}
 
                           {approval?.rejectedAt && (
                             <p className="mt-2 text-sm text-orange-300">
                               Rückfrage gesendet am:{" "}
-                              {new Date(approval.rejectedAt).toLocaleString(
-                                "de-DE"
-                              )}
+                              {formatDateTime(approval.rejectedAt)}
                             </p>
                           )}
 

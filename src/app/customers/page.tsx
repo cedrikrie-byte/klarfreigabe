@@ -88,7 +88,7 @@ export default async function CustomersPage({
             </p>
             <h1 className="text-xl font-bold">Kundenkartei</h1>
             <p className="mt-1 text-sm text-slate-400">
-              Kunden suchen, Historie prüfen und neue Aufträge anlegen.
+              Kunden, Firmen, Einsatzorte und bisherige Aufträge durchsuchen.
             </p>
           </div>
 
@@ -114,10 +114,11 @@ export default async function CustomersPage({
         <div className="rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h2 className="text-lg font-bold">Kunden</h2>
+              <h2 className="text-lg font-bold">Kunden / Firmen</h2>
               <p className="mt-1 text-sm text-slate-400">
-                {customers.length} Kunde{customers.length === 1 ? "" : "n"} in
-                deiner Kartei.
+                {customers.length} Kunde{customers.length === 1 ? "" : "n"}{" "}
+                oder Firma{customers.length === 1 ? "" : "en"} in deiner
+                Kartei.
               </p>
             </div>
 
@@ -126,7 +127,7 @@ export default async function CustomersPage({
                 type="search"
                 name="q"
                 defaultValue={searchQuery}
-                placeholder="Kunde, Telefon, E-Mail, Kennzeichen..."
+                placeholder="Kunde, Firma, Einsatzort, Referenz..."
                 className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 sm:w-96"
               />
 
@@ -156,9 +157,12 @@ export default async function CustomersPage({
 
           {filteredCustomers.length === 0 ? (
             <div className="mt-6 rounded-2xl border border-dashed border-white/10 p-8 text-center">
-              <p className="font-semibold">Keine passenden Kunden gefunden</p>
+              <p className="font-semibold">
+                Keine passenden Kunden oder Firmen gefunden
+              </p>
               <p className="mt-2 text-sm text-slate-400">
-                Lege einen neuen Auftrag an, um einen neuen Kunden zu erstellen.
+                Lege einen neuen Auftrag an, um einen neuen Kunden oder eine
+                neue Firma zu erstellen.
               </p>
 
               <Link
@@ -196,8 +200,14 @@ export default async function CustomersPage({
                             {customer.jobs.length === 1 ? "" : "e"} geladen
                           </span>
 
-                          {latestJob?.licensePlate && (
+                          {latestJob?.vehicle && (
                             <span className="rounded-full bg-blue-300/10 px-3 py-1 text-xs font-semibold text-blue-300">
+                              {latestJob.vehicle}
+                            </span>
+                          )}
+
+                          {latestJob?.licensePlate && (
+                            <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-slate-300">
                               {latestJob.licensePlate}
                             </span>
                           )}
@@ -206,7 +216,12 @@ export default async function CustomersPage({
                         {latestJob && (
                           <p className="mt-3 text-sm text-slate-500">
                             Letzter Auftrag: {latestJob.title}
-                            {latestJob.vehicle ? ` · ${latestJob.vehicle}` : ""}
+                            {latestJob.vehicle
+                              ? ` · ${latestJob.vehicle}`
+                              : ""}
+                            {latestJob.licensePlate
+                              ? ` · ${latestJob.licensePlate}`
+                              : ""}
                           </p>
                         )}
                       </div>

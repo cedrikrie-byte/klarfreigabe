@@ -41,7 +41,7 @@ function getJobSummary(job: DashboardJob) {
     };
   }
 
-  const hasVehicleIntake = job.items.some(
+  const hasBeforeDocumentation = job.items.some(
     (item) => item.type === "VEHICLE_INTAKE"
   );
 
@@ -78,9 +78,9 @@ function getJobSummary(job: DashboardJob) {
     };
   }
 
-  if (hasVehicleIntake) {
+  if (hasBeforeDocumentation) {
     return {
-      label: "Annahme dokumentiert",
+      label: "Vorher-Doku vorhanden",
       className: "bg-blue-300/10 text-blue-300",
     };
   }
@@ -152,7 +152,7 @@ export default async function DashboardPage({
     const matchesSearch =
       !searchQuery || searchText.includes(searchQuery.toLowerCase());
 
-    const hasVehicleIntake = job.items.some(
+    const hasBeforeDocumentation = job.items.some(
       (item) => item.type === "VEHICLE_INTAKE"
     );
 
@@ -168,7 +168,7 @@ export default async function DashboardPage({
             (statusFilter === "pending" && statuses.includes("PENDING")) ||
             (statusFilter === "approved" && statuses.includes("APPROVED")) ||
             (statusFilter === "rejected" && statuses.includes("REJECTED")) ||
-            (statusFilter === "intake" && hasVehicleIntake) ||
+            (statusFilter === "before" && hasBeforeDocumentation) ||
             (statusFilter === "none" && job.items.length === 0));
 
     return matchesSearch && matchesStatus;
@@ -205,7 +205,7 @@ export default async function DashboardPage({
     (job) => job.items.length === 0
   ).length;
 
-  const jobsWithVehicleIntake = activeJobs.filter((job) =>
+  const jobsWithBeforeDocumentation = activeJobs.filter((job) =>
     job.items.some((item) => item.type === "VEHICLE_INTAKE")
   ).length;
 
@@ -229,7 +229,7 @@ export default async function DashboardPage({
     if (statusFilter === "pending") return "Offen";
     if (statusFilter === "approved") return "Freigegeben";
     if (statusFilter === "rejected") return "Rückfrage / abgelehnt";
-    if (statusFilter === "intake") return "Mit Fahrzeugannahme";
+    if (statusFilter === "before") return "Mit Vorher-Dokumentation";
     if (statusFilter === "none") return "Ohne Dokumentation";
     if (statusFilter === "archived") return "Archiviert";
     return "Alle aktiven";
@@ -300,12 +300,12 @@ export default async function DashboardPage({
           </Link>
 
           <Link
-            href={buildFilterUrl("intake")}
+            href={buildFilterUrl("before")}
             className="rounded-3xl border border-blue-300/20 bg-blue-300/10 p-5 transition hover:bg-blue-300/15 active:scale-[0.98]"
           >
-            <p className="text-sm text-blue-100">Fahrzeugannahmen</p>
+            <p className="text-sm text-blue-100">Vorher-Dokus</p>
             <p className="mt-2 text-4xl font-bold text-blue-300">
-              {jobsWithVehicleIntake}
+              {jobsWithBeforeDocumentation}
             </p>
           </Link>
 
@@ -345,7 +345,7 @@ export default async function DashboardPage({
           >
             + Neuen Auftrag anlegen
             <p className="mt-2 text-sm font-normal text-slate-600">
-              Neuen Kunden, Fahrzeug und Auftrag erfassen.
+              Neuen Kunden, Einsatzort und Aufgabe erfassen.
             </p>
           </Link>
 
@@ -365,8 +365,7 @@ export default async function DashboardPage({
           >
             Aufträge ohne Dokumentation prüfen
             <p className="mt-2 text-sm font-normal text-slate-400">
-              Schnell sehen, wo noch keine Annahme oder Dokumentation vorhanden
-              ist.
+              Schnell sehen, wo noch keine Fotos oder Nachweise vorhanden sind.
             </p>
           </Link>
         </div>
@@ -380,7 +379,7 @@ export default async function DashboardPage({
                   : "Aktive Aufträge"}
               </h2>
               <p className="mt-1 text-sm text-slate-400">
-                Suche nach Kunde, Fahrzeug, Kennzeichen oder Auftrag.
+                Suche nach Kunde, Firma, Einsatzort, Referenz oder Aufgabe.
               </p>
             </div>
 
@@ -393,7 +392,7 @@ export default async function DashboardPage({
                 type="search"
                 name="q"
                 defaultValue={searchQuery}
-                placeholder="Kunde, Fahrzeug, Kennzeichen..."
+                placeholder="Kunde, Einsatzort, Referenz..."
                 className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 sm:w-80"
               />
 
@@ -452,14 +451,14 @@ export default async function DashboardPage({
             </Link>
 
             <Link
-              href={buildFilterUrl("intake")}
+              href={buildFilterUrl("before")}
               className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold transition active:scale-[0.98] ${
-                statusFilter === "intake"
+                statusFilter === "before"
                   ? "bg-white text-slate-950"
                   : "border border-white/10 text-white hover:bg-white/10"
               }`}
             >
-              Fahrzeugannahme
+              Vorher-Dokumentation
             </Link>
 
             <Link
@@ -518,7 +517,7 @@ export default async function DashboardPage({
             <div className="mt-6 space-y-3">
               {filteredJobs.map((job: DashboardJob) => {
                 const summary = getJobSummary(job);
-                const hasVehicleIntake = job.items.some(
+                const hasBeforeDocumentation = job.items.some(
                   (item) => item.type === "VEHICLE_INTAKE"
                 );
 
@@ -544,9 +543,9 @@ export default async function DashboardPage({
                             {summary.label}
                           </span>
 
-                          {hasVehicleIntake && (
+                          {hasBeforeDocumentation && (
                             <span className="rounded-full bg-blue-300/10 px-3 py-1 text-xs font-semibold text-blue-300">
-                              Fahrzeugannahme vorhanden
+                              Vorher-Doku vorhanden
                             </span>
                           )}
 

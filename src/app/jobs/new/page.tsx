@@ -122,12 +122,13 @@ export default function NewJobPage() {
           </p>
 
           <h1 className="text-3xl font-bold tracking-tight">
-            Werkstattauftrag anlegen
+            Auftrag anlegen
           </h1>
 
           <p className="mt-3 text-slate-300">
-            Erfasse einen neuen Kunden und ein Fahrzeug. Wenn der Kunde bereits
-            existiert, öffne zuerst die Kundenkartei und lege den Auftrag dort an.
+            Erfasse Kunde oder Firma, Einsatzort und Aufgabe. Wenn der Kunde
+            bereits existiert, öffne zuerst die Kundenkartei und lege den Auftrag
+            dort an.
           </p>
         </div>
 
@@ -152,13 +153,13 @@ export default function NewJobPage() {
 
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-200">
-              Kunde <span className="text-red-300">*</span>
+              Kunde / Firma <span className="text-red-300">*</span>
             </label>
             <input
               type="text"
               value={customerName}
               onChange={(event) => setCustomerName(event.target.value)}
-              placeholder="Max Mustermann"
+              placeholder="Muster GmbH / Max Mustermann"
               disabled={isLoading}
               className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
               required
@@ -174,7 +175,7 @@ export default function NewJobPage() {
                 type="tel"
                 value={customerPhone}
                 onChange={(event) => setCustomerPhone(event.target.value)}
-                placeholder="+49 170 1234567"
+                placeholder="+49 201 123456"
                 disabled={isLoading}
                 className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
               />
@@ -198,47 +199,43 @@ export default function NewJobPage() {
             </div>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-200">
-                Kennzeichen
-              </label>
-              <input
-                type="text"
-                value={licensePlate}
-                onChange={(event) =>
-                  setLicensePlate(event.target.value.toUpperCase())
-                }
-                placeholder="E KF 1234"
-                disabled={isLoading}
-                className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 uppercase text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-200">
-                Fahrzeug
-              </label>
-              <input
-                type="text"
-                value={vehicle}
-                onChange={(event) => setVehicle(event.target.value)}
-                placeholder="VW Golf 7"
-                disabled={isLoading}
-                className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
-              />
-            </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-200">
+              Einsatzort / Adresse / Objekt
+            </label>
+            <input
+              type="text"
+              value={vehicle}
+              onChange={(event) => setVehicle(event.target.value)}
+              placeholder="Musterstraße 1, 45127 Essen / Objekt A"
+              disabled={isLoading}
+              className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+            />
           </div>
 
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-200">
-              Auftragstitel <span className="text-red-300">*</span>
+              Referenz / Objekt-Nr. optional
+            </label>
+            <input
+              type="text"
+              value={licensePlate}
+              onChange={(event) => setLicensePlate(event.target.value)}
+              placeholder="Objekt 12 / Baustelle A / Auftrag 2026-001"
+              disabled={isLoading}
+              className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-200">
+              Aufgabe / Auftrag <span className="text-red-300">*</span>
             </label>
             <input
               type="text"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="Bremsenprüfung / Geräusch vorne rechts"
+              placeholder="Treppenhausreinigung / Malerarbeiten / Gartenpflege"
               disabled={isLoading}
               className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
               required
@@ -252,7 +249,7 @@ export default function NewJobPage() {
             <textarea
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="Kurze Beschreibung des Auftrags..."
+              placeholder="Kurze Beschreibung des Auftrags, besondere Hinweise oder Absprachen..."
               rows={4}
               disabled={isLoading}
               className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
@@ -275,9 +272,9 @@ export default function NewJobPage() {
                   disabled={isLoading}
                   className="mr-2"
                 />
-                <span className="font-semibold">Fahrzeugannahme starten</span>
+                <span className="font-semibold">Vorher-Dokumentation starten</span>
                 <p className="mt-1 text-xs text-slate-400">
-                  Empfohlen: direkt Fotos vom Zustand aufnehmen.
+                  Empfohlen: direkt Fotos vom Zustand vor Beginn aufnehmen.
                 </p>
               </label>
 
@@ -319,7 +316,7 @@ export default function NewJobPage() {
             {isLoading
               ? "Auftrag wird erstellt..."
               : nextStep === "intake"
-                ? "Auftrag erstellen und Fahrzeugannahme starten"
+                ? "Auftrag erstellen und Vorher-Dokumentation starten"
                 : "Auftrag erstellen"}
           </button>
         </form>

@@ -5,7 +5,7 @@ const CONTACT_EMAIL = "aiserviceengine@gmail.com";
 
 export default function PilotbetriebPage() {
   const mailSubject = encodeURIComponent(
-    `Pilotbetrieb für ${APP_NAME} werden`
+    `Pilotphase für ${APP_NAME} anfragen`
   );
 
   const mailBody = encodeURIComponent(
@@ -16,7 +16,8 @@ ich interessiere mich für die Pilotphase von ${APP_NAME}.
 Betrieb:
 Ansprechpartner:
 Telefon:
-Ort:
+Gewerk / Branche:
+Ort / Einsatzgebiet:
 
 Viele Grüße`
   );
@@ -62,12 +63,13 @@ Viele Grüße`
             </p>
 
             <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight sm:text-6xl">
-              Teste {APP_NAME} 30 Tage kostenlos in deiner Werkstatt.
+              Teste {APP_NAME} 30 Tage kostenlos in deinem Betrieb.
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200">
-              Für freie Kfz-Werkstätten, die Zusatzarbeiten, Fahrzeugannahmen
-              und Kundenfreigaben sauberer dokumentieren möchten.
+              Für Handwerks- und Servicebetriebe, die Arbeiten, Mängel,
+              Zusatzleistungen und Abnahmen einfacher mit Fotos dokumentieren
+              möchten.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -112,11 +114,11 @@ Viele Grüße`
               </div>
 
               <div className="rounded-2xl bg-slate-950/40 p-4">
-                Kurze Einführung in Auftrag, Foto-Doku, Freigabe und Nachweis
+                Kurze Einführung in Auftrag, Fotos, Freigabe und PDF-Nachweis
               </div>
 
               <div className="rounded-2xl bg-slate-950/40 p-4">
-                Feedback wird direkt für die Weiterentwicklung genutzt
+                Test mit echten Aufträgen, Einsatzorten oder Kundenfällen
               </div>
 
               <div className="rounded-2xl bg-slate-950/40 p-4">
@@ -134,29 +136,36 @@ Viele Grüße`
           </p>
 
           <h2 className="mt-2 max-w-3xl text-3xl font-bold tracking-tight">
-            Wenn später niemand mehr genau weiß, was vorher dokumentiert oder
-            freigegeben war.
+            Wenn später nachvollziehbar sein soll, was dokumentiert, besprochen
+            oder freigegeben wurde.
           </h2>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="font-semibold">„Der Kratzer war vorher nicht da“</p>
+              <p className="font-semibold">
+                „Das war vorher schon beschädigt“
+              </p>
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                Fahrzeugzustand bei Abgabe mit Fotos sichern.
+                Zustand vor Arbeitsbeginn oder vor Übergabe mit Fotos sichern.
               </p>
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="font-semibold">„Das habe ich nie freigegeben“</p>
+              <p className="font-semibold">
+                „Das habe ich nicht freigegeben“
+              </p>
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                Zusatzarbeit mit Link, Zeitpunkt und Status dokumentieren.
+                Zusatzleistung oder Nachtrag per Link bestätigen lassen.
               </p>
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="font-semibold">„Was wurde eigentlich gemacht?“</p>
+              <p className="font-semibold">
+                „Was wurde eigentlich erledigt?“
+              </p>
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                Fotos, Beschreibung, Preis und PDF-Nachweis im Auftrag behalten.
+                Fotos, Beschreibung, Preis/Kostenhinweis und PDF-Nachweis im
+                Auftrag behalten.
               </p>
             </div>
           </div>
@@ -174,8 +183,8 @@ Viele Grüße`
           </h2>
 
           <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">
-            Schick kurz Betrieb, Ansprechpartner, Ort und Telefonnummer. Dann
-            können wir klären, ob {APP_NAME} zu deinem Werkstattablauf passt.
+            Schick kurz Betrieb, Ansprechpartner, Gewerk, Ort und Telefonnummer.
+            Dann können wir klären, ob {APP_NAME} zu deinem Ablauf passt.
           </p>
 
           <a

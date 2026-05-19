@@ -70,11 +70,11 @@ function formatDateTime(date: Date) {
 
 function getStatusLabel(status: string, type: string, approvalRequired: boolean) {
   if (!approvalRequired && type === "VEHICLE_INTAKE") {
-    return "Annahme dokumentiert";
+    return "Vorher dokumentiert";
   }
 
   if (!approvalRequired && type === "AFTER_DOCUMENTATION") {
-    return "Nachher dokumentiert";
+    return "Abschluss dokumentiert";
   }
 
   if (!approvalRequired) {
@@ -89,11 +89,11 @@ function getStatusLabel(status: string, type: string, approvalRequired: boolean)
 }
 
 function getTypeLabel(type: string) {
-  if (type === "VEHICLE_INTAKE") return "Fahrzeugannahme";
-  if (type === "ADDITIONAL_WORK") return "Zusatzarbeit";
-  if (type === "DAMAGE_FOUND") return "Schaden entdeckt";
-  if (type === "AFTER_DOCUMENTATION") return "Nachher-Dokumentation";
-  if (type === "OTHER") return "Sonstige Dokumentation";
+  if (type === "VEHICLE_INTAKE") return "Vorher-Dokumentation";
+  if (type === "ADDITIONAL_WORK") return "Zusatzleistung / Nachtrag";
+  if (type === "DAMAGE_FOUND") return "Mangel / Schaden dokumentiert";
+  if (type === "AFTER_DOCUMENTATION") return "Abschluss-Dokumentation";
+  if (type === "OTHER") return "Allgemeine Dokumentation";
 
   return "Dokumentation";
 }
@@ -281,7 +281,7 @@ export default async function JobPage({ params }: JobPageProps) {
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="rounded-2xl bg-slate-900 p-4">
-              <p className="text-sm text-slate-400">Kunde</p>
+              <p className="text-sm text-slate-400">Kunde / Firma</p>
               <p className="mt-1 font-semibold">{job.customer.name}</p>
 
               {job.customer.phone && (
@@ -298,14 +298,14 @@ export default async function JobPage({ params }: JobPageProps) {
             </div>
 
             <div className="rounded-2xl bg-slate-900 p-4">
-              <p className="text-sm text-slate-400">Fahrzeug</p>
+              <p className="text-sm text-slate-400">Einsatzort / Objekt</p>
               <p className="mt-1 font-semibold">
-                {job.vehicle || "Kein Fahrzeug angegeben"}
+                {job.vehicle || "Kein Einsatzort angegeben"}
               </p>
 
               {job.licensePlate && (
                 <p className="mt-1 text-sm text-slate-400">
-                  {job.licensePlate}
+                  Referenz: {job.licensePlate}
                 </p>
               )}
             </div>
@@ -344,7 +344,7 @@ export default async function JobPage({ params }: JobPageProps) {
                     href={`/jobs/${job.id}/documentation/new?type=VEHICLE_INTAKE`}
                     className="rounded-2xl bg-blue-300 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-blue-200 active:scale-[0.98] sm:py-2"
                   >
-                    Fahrzeugannahme starten
+                    Vorher-Dokumentation starten
                   </Link>
 
                   <Link
@@ -365,7 +365,8 @@ export default async function JobPage({ params }: JobPageProps) {
               <div className="mt-5 space-y-4">
                 {job.items.map((item: JobItem) => {
                   const approval = item.approval;
-                  const isVehicleIntake = item.type === "VEHICLE_INTAKE";
+                  const isBeforeDocumentation =
+                    item.type === "VEHICLE_INTAKE";
                   const isApprovalItem =
                     item.approvalRequired && approval !== null;
                   const approvalUrl = approval
@@ -389,17 +390,17 @@ export default async function JobPage({ params }: JobPageProps) {
                                 {item.title}
                               </p>
 
-                              {!isVehicleIntake && (
+                              {!isBeforeDocumentation && (
                                 <p className="mt-1 whitespace-pre-line text-sm leading-6 text-slate-400">
                                   {item.description}
                                 </p>
                               )}
 
-                              {isVehicleIntake && (
+                              {isBeforeDocumentation && (
                                 <p className="mt-1 text-sm leading-6 text-slate-400">
-                                  Zustand des Fahrzeugs bei Abgabe dokumentiert.
-                                  Diese Fotos dienen als Nachweis bei späteren
-                                  Rückfragen oder Reklamationen.
+                                  Zustand vor Beginn dokumentiert. Diese Fotos
+                                  dienen als Nachweis bei späteren Rückfragen,
+                                  Abnahmen oder Reklamationen.
                                 </p>
                               )}
                             </div>
@@ -420,7 +421,7 @@ export default async function JobPage({ params }: JobPageProps) {
 
                           {item.priceText && item.approvalRequired && (
                             <p className="mt-2 text-sm font-semibold text-slate-200">
-                              Kostenschätzung: {item.priceText}
+                              Preis / Kostenhinweis: {item.priceText}
                             </p>
                           )}
 

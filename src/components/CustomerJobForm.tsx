@@ -48,7 +48,7 @@ export default function CustomerJobForm({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const hasPrefilledVehicle = Boolean(initialLicensePlate || initialVehicle);
+  const hasPrefilledObject = Boolean(initialLicensePlate || initialVehicle);
 
   async function handleCreateJob(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -114,58 +114,55 @@ export default function CustomerJobForm({
       <div className="rounded-2xl border border-blue-300/20 bg-blue-300/10 p-4 text-sm leading-6 text-blue-100">
         <p className="font-semibold">Auftrag für bestehenden Kunden</p>
         <p className="mt-1">
-          Der Auftrag wird direkt in der Kundenkartei von{" "}
+          Der Auftrag wird direkt in der Kundenakte von{" "}
           <strong>{customerName}</strong> gespeichert.
         </p>
 
-        {hasPrefilledVehicle && (
+        {hasPrefilledObject && (
           <p className="mt-2">
-            Fahrzeugdaten wurden aus der bisherigen Fahrzeughistorie übernommen.
+            Einsatzort oder Referenz wurden aus der bisherigen Historie
+            übernommen.
           </p>
         )}
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-200">
-            Kennzeichen
-          </label>
-          <input
-            type="text"
-            value={licensePlate}
-            onChange={(event) =>
-              setLicensePlate(event.target.value.toUpperCase())
-            }
-            placeholder="E KF 1234"
-            disabled={isLoading}
-            className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 uppercase text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
-          />
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-200">
-            Fahrzeug
-          </label>
-          <input
-            type="text"
-            value={vehicle}
-            onChange={(event) => setVehicle(event.target.value)}
-            placeholder="VW Golf 7"
-            disabled={isLoading}
-            className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
-          />
-        </div>
+      <div>
+        <label className="mb-2 block text-sm font-medium text-slate-200">
+          Einsatzort / Adresse / Objekt
+        </label>
+        <input
+          type="text"
+          value={vehicle}
+          onChange={(event) => setVehicle(event.target.value)}
+          placeholder="Musterstraße 1, 45127 Essen / Objekt A"
+          disabled={isLoading}
+          className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+        />
       </div>
 
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-200">
-          Auftragstitel <span className="text-red-300">*</span>
+          Referenz / Objekt-Nr. optional
+        </label>
+        <input
+          type="text"
+          value={licensePlate}
+          onChange={(event) => setLicensePlate(event.target.value)}
+          placeholder="Objekt 12 / Baustelle A / Auftrag 2026-001"
+          disabled={isLoading}
+          className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+        />
+      </div>
+
+      <div>
+        <label className="mb-2 block text-sm font-medium text-slate-200">
+          Aufgabe / Auftrag <span className="text-red-300">*</span>
         </label>
         <input
           type="text"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="Inspektion / Bremsenprüfung / Geräusch vorne rechts"
+          placeholder="Treppenhausreinigung / Malerarbeiten / Gartenpflege"
           disabled={isLoading}
           className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
           required
@@ -179,7 +176,7 @@ export default function CustomerJobForm({
         <textarea
           value={notes}
           onChange={(event) => setNotes(event.target.value)}
-          placeholder="Kurze Beschreibung des Auftrags..."
+          placeholder="Kurze Beschreibung des Auftrags, besondere Hinweise oder Absprachen..."
           rows={4}
           disabled={isLoading}
           className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
@@ -202,9 +199,9 @@ export default function CustomerJobForm({
               disabled={isLoading}
               className="mr-2"
             />
-            <span className="font-semibold">Fahrzeugannahme starten</span>
+            <span className="font-semibold">Vorher-Dokumentation starten</span>
             <p className="mt-1 text-xs text-slate-400">
-              Empfohlen: direkt Fotos vom Zustand aufnehmen.
+              Empfohlen: direkt Fotos vom Zustand vor Beginn aufnehmen.
             </p>
           </label>
 
@@ -254,7 +251,7 @@ export default function CustomerJobForm({
           {isLoading
             ? "Auftrag wird erstellt..."
             : nextStep === "intake"
-              ? "Erstellen und Annahme starten"
+              ? "Erstellen und Vorher-Dokumentation starten"
               : "Auftrag erstellen"}
         </button>
       </div>

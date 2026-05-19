@@ -39,7 +39,7 @@ export default async function NewCustomerJobPage({
   }
 
   const initialVehicle = vehicle?.trim() || "";
-  const initialLicensePlate = licensePlate?.trim().toUpperCase() || "";
+  const initialLicensePlate = licensePlate?.trim() || "";
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-white sm:px-6 sm:py-10">

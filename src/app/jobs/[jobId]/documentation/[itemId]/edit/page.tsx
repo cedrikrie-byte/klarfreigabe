@@ -2,8 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import DocumentationPhotoManager from "@/components/DocumentationPhotoManager";
-import FormSubmitButton from "@/components/FormSubmitButton";
+import PhotoGallery from "@/components/PhotoGallery";
 
 type EditDocumentationPageProps = {
   params: Promise<{
@@ -19,31 +18,18 @@ type EditPhoto = {
 };
 
 function getTypeLabel(type: string) {
-  if (type === "VEHICLE_INTAKE") return "Fahrzeugannahme";
-  if (type === "ADDITIONAL_WORK") return "Zusatzarbeit";
-  if (type === "DAMAGE_FOUND") return "Schaden entdeckt";
-  if (type === "AFTER_DOCUMENTATION") return "Nachher-Dokumentation";
-  if (type === "OTHER") return "Sonstige Dokumentation";
+  if (type === "VEHICLE_INTAKE") return "Vorher-Dokumentation";
+  if (type === "ADDITIONAL_WORK") return "Zusatzleistung / Nachtrag";
+  if (type === "DAMAGE_FOUND") return "Mangel / Schaden dokumentiert";
+  if (type === "AFTER_DOCUMENTATION") return "Abschluss-Dokumentation";
+  if (type === "OTHER") return "Allgemeine Dokumentation";
 
   return "Dokumentation";
 }
 
-function canEditItem(status: string, approvalRequired: boolean) {
-  if (!approvalRequired) {
-    return true;
-  }
-
-  return status === "PENDING";
-}
-
 export default async function EditDocumentationPage({
   params,
-  searchParams,
-}: EditDocumentationPageProps & {
-  searchParams: Promise<{
-    error?: string;
-  }>;
-}) {
+}: EditDocumentationPageProps) {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -51,7 +37,6 @@ export default async function EditDocumentationPage({
   }
 
   const { jobId, itemId } = await params;
-  const { error } = await searchParams;
 
   const item = await prisma.documentationItem.findFirst({
     where: {
@@ -73,11 +58,8 @@ export default async function EditDocumentationPage({
   }
 
   const photos: EditPhoto[] = item.photos;
-  const isArchived = item.job.status === "ARCHIVED";
-  const canEdit = canEditItem(item.status, item.approvalRequired) && !isArchived;
-  const isVehicleIntake = item.type === "VEHICLE_INTAKE";
-  const isSimplePhotoDocumentation =
-    item.type === "VEHICLE_INTAKE" || item.type === "AFTER_DOCUMENTATION";
+  const canEdit = item.status === "PENDING";
+  const isBeforeDocumentation = item.type === "VEHICLE_INTAKE";
 
   async function updateDocumentation(formData: FormData) {
     "use server";
@@ -92,6 +74,10 @@ export default async function EditDocumentationPage({
     const description = String(formData.get("description") || "").trim();
     const priceText = String(formData.get("priceText") || "").trim();
 
+    if (!title || !description) {
+      redirect(`/jobs/${jobId}/documentation/${itemId}/edit`);
+    }
+
     const existingItem = await prisma.documentationItem.findFirst({
       where: {
         id: itemId,
@@ -102,7 +88,6 @@ export default async function EditDocumentationPage({
       },
       include: {
         approval: true,
-        job: true,
       },
     });
 
@@ -110,30 +95,8 @@ export default async function EditDocumentationPage({
       redirect(`/jobs/${jobId}`);
     }
 
-    const existingCanEdit =
-      canEditItem(existingItem.status, existingItem.approvalRequired) &&
-      existingItem.job.status !== "ARCHIVED";
-
-    if (!existingCanEdit) {
+    if (existingItem.status !== "PENDING") {
       redirect(`/jobs/${jobId}`);
-    }
-
-    const existingIsSimplePhotoDocumentation =
-      existingItem.type === "VEHICLE_INTAKE" ||
-      existingItem.type === "AFTER_DOCUMENTATION";
-
-    const finalTitle =
-      existingIsSimplePhotoDocumentation && !title
-        ? existingItem.title
-        : title;
-
-    const finalDescription =
-      existingIsSimplePhotoDocumentation && !description
-        ? existingItem.description
-        : description;
-
-    if (!finalTitle || !finalDescription) {
-      redirect(`/jobs/${jobId}/documentation/${itemId}/edit?error=missing`);
     }
 
     await prisma.documentationItem.update({
@@ -141,9 +104,9 @@ export default async function EditDocumentationPage({
         id: itemId,
       },
       data: {
-        title: finalTitle,
-        description: finalDescription,
-        priceText: existingItem.approvalRequired ? priceText || null : null,
+        title,
+        description,
+        priceText: priceText || null,
       },
     });
 
@@ -162,36 +125,20 @@ export default async function EditDocumentationPage({
 
         <div className="mt-6">
           <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
-            {getTypeLabel(item.type)} bearbeiten
+            Dokumentation bearbeiten
           </p>
 
           <h1 className="text-3xl font-bold tracking-tight">{item.title}</h1>
 
           <p className="mt-3 text-slate-300">
-            {item.approvalRequired
-              ? "Du kannst diese Freigabe bearbeiten, solange sie noch offen ist."
-              : "Diese Dokumentation ist ein interner Nachweis ohne Kundenfreigabe."}
+            Du kannst diese Dokumentation bearbeiten, solange sie noch offen ist.
           </p>
         </div>
 
-        {isArchived && (
-          <div className="mt-6 rounded-2xl border border-slate-500/30 bg-slate-800 p-4 text-sm leading-6 text-slate-200">
-            Dieser Auftrag ist archiviert. Dokumentationen und Fotos können
-            angesehen, aber nicht bearbeitet werden.
-          </div>
-        )}
-
-        {!canEdit && !isArchived && (
-          <div className="mt-6 rounded-2xl border border-yellow-300/20 bg-yellow-300/10 p-4 text-sm leading-6 text-yellow-100">
+        {!canEdit && (
+          <div className="mt-6 rounded-2xl border border-yellow-300/20 bg-yellow-300/10 p-4 text-yellow-100">
             Diese Dokumentation wurde bereits beantwortet und kann nicht mehr
-            bearbeitet werden. Dadurch bleiben Freigabe und Nachweis
-            nachvollziehbar.
-          </div>
-        )}
-
-        {error === "missing" && (
-          <div className="mt-6 rounded-2xl border border-red-400/30 bg-red-500/10 p-4 text-sm font-semibold text-red-200">
-            Bitte fülle Titel und Beschreibung aus.
+            bearbeitet werden.
           </div>
         )}
 
@@ -199,82 +146,91 @@ export default async function EditDocumentationPage({
           action={updateDocumentation}
           className="mt-8 space-y-5 rounded-3xl border border-white/10 bg-white/5 p-5"
         >
-          {isVehicleIntake ? (
-            <div className="rounded-2xl border border-blue-300/20 bg-blue-300/10 p-4 text-sm leading-6 text-blue-100">
-              <p className="font-semibold">Fahrzeugannahme</p>
-              <p className="mt-2">
-                Die Fahrzeugannahme ist als reine Foto-Dokumentation gedacht.
-                Titel, Beschreibung und Preis werden bewusst nicht benötigt.
+          <div className="rounded-2xl border border-blue-300/20 bg-blue-300/10 p-4 text-sm leading-6 text-blue-100">
+            <p className="font-semibold">{getTypeLabel(item.type)}</p>
+            <p className="mt-1">
+              Diese Angaben erscheinen im Auftrag, im Freigabelink und im
+              PDF-Nachweis.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-200">
+              Titel
+            </label>
+            <input
+              name="title"
+              type="text"
+              defaultValue={item.title}
+              disabled={!canEdit || isBeforeDocumentation}
+              className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none disabled:cursor-not-allowed disabled:opacity-60"
+              required
+            />
+
+            {isBeforeDocumentation && (
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                Bei einer Vorher-Dokumentation wird der Standardtitel
+                normalerweise automatisch gesetzt.
               </p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-200">
+              Beschreibung für den Kunden
+            </label>
+            <textarea
+              name="description"
+              rows={6}
+              defaultValue={item.description}
+              disabled={!canEdit || isBeforeDocumentation}
+              className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none disabled:cursor-not-allowed disabled:opacity-60"
+              required
+            />
+
+            {isBeforeDocumentation && (
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                Bei einer Vorher-Dokumentation reicht meist der Foto-Nachweis.
+              </p>
+            )}
+          </div>
+
+          {!isBeforeDocumentation && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-200">
+                Preis / Kostenhinweis
+              </label>
+              <input
+                name="priceText"
+                type="text"
+                defaultValue={item.priceText || ""}
+                disabled={!canEdit}
+                placeholder="z. B. ca. 320 € inkl. MwSt. / nach Aufwand"
+                className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+              />
             </div>
-          ) : (
-            <>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">
-                  Titel <span className="text-red-300">*</span>
-                </label>
-                <input
-                  name="title"
-                  type="text"
-                  defaultValue={item.title}
-                  disabled={!canEdit}
-                  className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none disabled:cursor-not-allowed disabled:opacity-60"
-                  required={!isSimplePhotoDocumentation}
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">
-                  Beschreibung für den Kunden{" "}
-                  <span className="text-red-300">*</span>
-                </label>
-                <textarea
-                  name="description"
-                  rows={6}
-                  defaultValue={item.description}
-                  disabled={!canEdit}
-                  className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none disabled:cursor-not-allowed disabled:opacity-60"
-                  required={!isSimplePhotoDocumentation}
-                />
-              </div>
-
-              {item.approvalRequired && (
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-200">
-                    Preis / Kostenschätzung
-                  </label>
-                  <input
-                    name="priceText"
-                    type="text"
-                    defaultValue={item.priceText || ""}
-                    disabled={!canEdit}
-                    placeholder="ca. 320 € inkl. MwSt."
-                    className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
-                  />
-                </div>
-              )}
-            </>
           )}
 
-          <DocumentationPhotoManager
-            itemId={item.id}
-            photos={photos}
-            canEdit={canEdit}
-          />
+          {photos.length > 0 && (
+            <div className="rounded-2xl border border-dashed border-white/15 bg-slate-900 p-5">
+              <p className="font-semibold">Dokumentationsfotos</p>
 
-          <FormSubmitButton
-            idleLabel={
-              isVehicleIntake
-                ? "Fahrzeugannahme schließen"
-                : "Änderungen speichern"
-            }
-            pendingLabel={
-              isVehicleIntake
-                ? "Wird geschlossen..."
-                : "Änderungen werden gespeichert..."
-            }
+              <PhotoGallery photos={photos} />
+
+              <p className="mt-3 text-sm text-slate-400">
+                Fotos können aktuell angesehen, aber noch nicht nachträglich
+                ersetzt oder ergänzt werden.
+              </p>
+            </div>
+          )}
+
+          <button
+            type="submit"
             disabled={!canEdit}
-          />
+            className="w-full rounded-2xl bg-white px-5 py-3 font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Änderungen speichern
+          </button>
         </form>
       </div>
     </main>

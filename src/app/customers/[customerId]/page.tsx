@@ -26,7 +26,7 @@ type CustomerJob = {
   }[];
 };
 
-type VehicleGroup = {
+type ObjectGroup = {
   key: string;
   label: string;
   jobs: CustomerJob[];
@@ -50,52 +50,52 @@ function getJobStatusClass(status: string) {
   return "bg-yellow-300/10 text-yellow-300";
 }
 
-function getVehicleKey(job: CustomerJob) {
-  const licensePlate = job.licensePlate?.trim().toUpperCase();
-  const vehicle = job.vehicle?.trim();
+function getObjectKey(job: CustomerJob) {
+  const reference = job.licensePlate?.trim().toLowerCase();
+  const object = job.vehicle?.trim().toLowerCase();
 
-  if (licensePlate) {
-    return `plate:${licensePlate}`;
+  if (reference) {
+    return `reference:${reference}`;
   }
 
-  if (vehicle) {
-    return `vehicle:${vehicle.toLowerCase()}`;
+  if (object) {
+    return `object:${object}`;
   }
 
   return "unknown";
 }
 
-function getVehicleLabel(job: CustomerJob) {
-  const vehicle = job.vehicle?.trim();
-  const licensePlate = job.licensePlate?.trim().toUpperCase();
+function getObjectLabel(job: CustomerJob) {
+  const object = job.vehicle?.trim();
+  const reference = job.licensePlate?.trim();
 
-  if (vehicle && licensePlate) {
-    return `${vehicle} · ${licensePlate}`;
+  if (object && reference) {
+    return `${object} · ${reference}`;
   }
 
-  if (licensePlate) {
-    return licensePlate;
+  if (reference) {
+    return reference;
   }
 
-  if (vehicle) {
-    return vehicle;
+  if (object) {
+    return object;
   }
 
-  return "Ohne Fahrzeugangabe";
+  return "Ohne Einsatzort / Referenz";
 }
 
-function getNewVehicleJobUrl(customerId: string, group: VehicleGroup) {
+function getNewObjectJobUrl(customerId: string, group: ObjectGroup) {
   const params = new URLSearchParams();
 
-  const vehicle = group.latestJob.vehicle?.trim() || "";
-  const licensePlate = group.latestJob.licensePlate?.trim().toUpperCase() || "";
+  const object = group.latestJob.vehicle?.trim() || "";
+  const reference = group.latestJob.licensePlate?.trim() || "";
 
-  if (vehicle) {
-    params.set("vehicle", vehicle);
+  if (object) {
+    params.set("vehicle", object);
   }
 
-  if (licensePlate) {
-    params.set("licensePlate", licensePlate);
+  if (reference) {
+    params.set("licensePlate", reference);
   }
 
   const queryString = params.toString();
@@ -105,11 +105,11 @@ function getNewVehicleJobUrl(customerId: string, group: VehicleGroup) {
     : `/customers/${customerId}/jobs/new`;
 }
 
-function groupJobsByVehicle(jobs: CustomerJob[]) {
-  const groups = new Map<string, VehicleGroup>();
+function groupJobsByObject(jobs: CustomerJob[]) {
+  const groups = new Map<string, ObjectGroup>();
 
   for (const job of jobs) {
-    const key = getVehicleKey(job);
+    const key = getObjectKey(job);
     const existingGroup = groups.get(key);
 
     if (existingGroup) {
@@ -121,7 +121,7 @@ function groupJobsByVehicle(jobs: CustomerJob[]) {
     } else {
       groups.set(key, {
         key,
-        label: getVehicleLabel(job),
+        label: getObjectLabel(job),
         jobs: [job],
         latestJob: job,
       });
@@ -146,7 +146,7 @@ function getJobSummary(job: CustomerJob) {
     (item) => item.approval?.status === "APPROVED"
   ).length;
 
-  const hasVehicleIntake = job.items.some(
+  const hasBeforeDocumentation = job.items.some(
     (item) => item.type === "VEHICLE_INTAKE"
   );
 
@@ -171,9 +171,9 @@ function getJobSummary(job: CustomerJob) {
     };
   }
 
-  if (hasVehicleIntake) {
+  if (hasBeforeDocumentation) {
     return {
-      label: "Annahme vorhanden",
+      label: "Vorher-Doku vorhanden",
       className: "bg-blue-300/10 text-blue-300",
     };
   }
@@ -227,9 +227,9 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
 
   const jobs: CustomerJob[] = customer.jobs;
   const archivedJobs = jobs.filter((job) => job.status === "ARCHIVED");
-  const vehicleGroups = groupJobsByVehicle(jobs);
+  const objectGroups = groupJobsByObject(jobs);
 
-  const jobsWithVehicleIntake = jobs.filter((job) =>
+  const jobsWithBeforeDocumentation = jobs.filter((job) =>
     job.items.some((item) => item.type === "VEHICLE_INTAKE")
   ).length;
 
@@ -247,7 +247,7 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                Kunde
+                Kunde / Firma
               </p>
               <h1 className="mt-2 text-3xl font-bold tracking-tight">
                 {customer.name}
@@ -292,13 +292,15 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
             </div>
 
             <div className="rounded-2xl bg-slate-900 p-4">
-              <p className="text-sm text-slate-400">Fahrzeuge/Kennzeichen</p>
-              <p className="mt-2 text-3xl font-bold">{vehicleGroups.length}</p>
+              <p className="text-sm text-slate-400">Einsatzorte/Referenzen</p>
+              <p className="mt-2 text-3xl font-bold">{objectGroups.length}</p>
             </div>
 
             <div className="rounded-2xl bg-slate-900 p-4">
-              <p className="text-sm text-slate-400">Annahmen</p>
-              <p className="mt-2 text-3xl font-bold">{jobsWithVehicleIntake}</p>
+              <p className="text-sm text-slate-400">Vorher-Dokus</p>
+              <p className="mt-2 text-3xl font-bold">
+                {jobsWithBeforeDocumentation}
+              </p>
             </div>
 
             <div className="rounded-2xl bg-slate-900 p-4">
@@ -310,27 +312,29 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
 
         <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-5">
           <div>
-            <h2 className="text-xl font-bold">Fahrzeughistorie</h2>
+            <h2 className="text-xl font-bold">Einsatzort-Historie</h2>
             <p className="mt-1 text-sm text-slate-400">
-              Aufträge gruppiert nach Kennzeichen oder Fahrzeugangabe.
+              Aufträge gruppiert nach Einsatzort, Objekt oder Referenz.
             </p>
           </div>
 
-          {vehicleGroups.length === 0 ? (
+          {objectGroups.length === 0 ? (
             <div className="mt-6 rounded-2xl border border-dashed border-white/10 p-8 text-center">
-              <p className="font-semibold">Noch keine Fahrzeughistorie vorhanden</p>
+              <p className="font-semibold">
+                Noch keine Einsatzort-Historie vorhanden
+              </p>
               <p className="mt-2 text-sm text-slate-400">
                 Sobald ein Auftrag angelegt wird, erscheint hier die Historie.
               </p>
             </div>
           ) : (
             <div className="mt-6 space-y-4">
-              {vehicleGroups.map((group) => {
-                const activeVehicleJobs = group.jobs.filter(
+              {objectGroups.map((group) => {
+                const activeObjectJobs = group.jobs.filter(
                   (job) => job.status !== "ARCHIVED"
                 );
 
-                const vehicleIntakes = group.jobs.filter((job) =>
+                const beforeDocumentations = group.jobs.filter((job) =>
                   job.items.some((item) => item.type === "VEHICLE_INTAKE")
                 ).length;
 
@@ -351,7 +355,7 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          Fahrzeug / Kennzeichen
+                          Einsatzort / Objekt / Referenz
                         </p>
                         <h3 className="mt-1 text-lg font-bold">
                           {group.label}
@@ -364,8 +368,8 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
                           </span>
 
                           <span className="rounded-full bg-blue-300/10 px-3 py-1 text-xs font-semibold text-blue-300">
-                            {vehicleIntakes} Annahme
-                            {vehicleIntakes === 1 ? "" : "n"}
+                            {beforeDocumentations} Vorher-Doku
+                            {beforeDocumentations === 1 ? "" : "s"}
                           </span>
 
                           {openApprovals > 0 && (
@@ -375,7 +379,7 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
                             </span>
                           )}
 
-                          {activeVehicleJobs.length === 0 && (
+                          {activeObjectJobs.length === 0 && (
                             <span className="rounded-full bg-slate-700 px-3 py-1 text-xs font-semibold text-slate-200">
                               Nur archivierte Aufträge
                             </span>
@@ -384,10 +388,10 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
                       </div>
 
                       <Link
-                        href={getNewVehicleJobUrl(customer.id, group)}
+                        href={getNewObjectJobUrl(customer.id, group)}
                         className="rounded-2xl border border-blue-300/20 bg-blue-300/10 px-4 py-3 text-center text-sm font-semibold text-blue-100 transition hover:bg-blue-300/20 active:scale-[0.98] sm:py-2"
                       >
-                        Auftrag für dieses Fahrzeug
+                        Auftrag für diesen Einsatzort
                       </Link>
                     </div>
 
@@ -456,7 +460,7 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
           <div>
             <h2 className="text-xl font-bold">Alle Aufträge</h2>
             <p className="mt-1 text-sm text-slate-400">
-              Chronologische Auftragshistorie dieses Kunden.
+              Chronologische Auftragshistorie dieses Kunden oder dieser Firma.
             </p>
           </div>
 
@@ -489,7 +493,7 @@ export default async function CustomerPage({ params }: CustomerPageProps) {
                         <p className="mt-1 text-sm text-slate-400">
                           {new Date(job.createdAt).toLocaleDateString("de-DE")}
                           {" · "}
-                          {job.vehicle || "Kein Fahrzeug angegeben"}
+                          {job.vehicle || "Kein Einsatzort angegeben"}
                           {job.licensePlate ? ` · ${job.licensePlate}` : ""}
                         </p>
 

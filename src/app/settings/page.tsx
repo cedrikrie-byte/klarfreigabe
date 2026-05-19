@@ -77,8 +77,8 @@ export default async function SettingsPage({
 
           <p className="mt-3 max-w-2xl text-slate-300">
             Diese Daten werden auf Kundenfreigaben, E-Mails und PDF-Nachweisen
-            angezeigt. Eine gepflegte Betriebsadresse wirkt bei Pilotbetrieben
-            und Kunden deutlich professioneller.
+            angezeigt. Vollständige Betriebsdaten wirken für Kunden deutlich
+            professioneller.
           </p>
         </div>
 
@@ -107,7 +107,7 @@ export default async function SettingsPage({
                 name="name"
                 type="text"
                 defaultValue={user.company.name}
-                placeholder="Muster AutoService GmbH"
+                placeholder="Muster Service GmbH"
                 className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500"
                 required
               />
@@ -138,7 +138,7 @@ export default async function SettingsPage({
                   name="email"
                   type="email"
                   defaultValue={user.company.email || ""}
-                  placeholder="info@werkstatt.de"
+                  placeholder="info@betrieb.de"
                   className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500"
                 />
                 <p className="mt-2 text-xs leading-5 text-slate-500">
@@ -172,12 +172,13 @@ export default async function SettingsPage({
           <div className="space-y-4">
             <div className="rounded-3xl border border-blue-300/20 bg-blue-300/10 p-5">
               <p className="font-semibold text-blue-100">
-                Für die Demo wichtig
+                Für Pilotkunden und Demos wichtig
               </p>
               <p className="mt-2 text-sm leading-6 text-blue-100/80">
-                Vor einer Vorführung solltest du hier mindestens Betriebsname,
-                E-Mail und Telefonnummer eintragen. Dadurch sehen E-Mails und
-                PDF-Nachweise nicht nach Testsystem aus.
+                Vor einer Vorführung oder einem echten Test solltest du hier
+                mindestens Betriebsname, E-Mail und Telefonnummer eintragen.
+                Dadurch sehen E-Mails, Freigabelinks und PDF-Nachweise nicht
+                nach Testsystem aus.
               </p>
             </div>
 
@@ -214,7 +215,7 @@ export default async function SettingsPage({
               <p className="mt-2 text-sm leading-6 text-slate-400">
                 Freigabe-E-Mails werden technisch über {APP_NAME} versendet. Wenn
                 hier eine Betriebs-E-Mail hinterlegt ist, kann der Kunde darauf
-                antworten und landet direkt bei der Werkstatt.
+                antworten und landet direkt bei deinem Betrieb.
               </p>
             </div>
           </div>

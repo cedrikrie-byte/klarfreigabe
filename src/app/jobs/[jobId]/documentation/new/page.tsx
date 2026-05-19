@@ -68,9 +68,9 @@ function getInitialType(typeFromUrl: string | null) {
 }
 
 function getDefaultTitle(type: string) {
-  if (type === "VEHICLE_INTAKE") return "Fahrzeugannahme";
-  if (type === "DAMAGE_FOUND") return "Schaden entdeckt";
-  if (type === "AFTER_DOCUMENTATION") return "Nachher-Dokumentation";
+  if (type === "VEHICLE_INTAKE") return "Vorher-Dokumentation";
+  if (type === "DAMAGE_FOUND") return "Mangel / Schaden dokumentiert";
+  if (type === "AFTER_DOCUMENTATION") return "Abschluss-Dokumentation";
   if (type === "OTHER") return "Dokumentation";
 
   return "";
@@ -78,11 +78,11 @@ function getDefaultTitle(type: string) {
 
 function getDefaultDescription(type: string) {
   if (type === "VEHICLE_INTAKE") {
-    return "Zustand des Fahrzeugs bei Abgabe dokumentiert.";
+    return "Zustand vor Beginn der Arbeit dokumentiert.";
   }
 
   if (type === "AFTER_DOCUMENTATION") {
-    return "Nachher-Zustand dokumentiert.";
+    return "Zustand nach Abschluss der Arbeit dokumentiert.";
   }
 
   return "";
@@ -174,7 +174,7 @@ export default function NewDocumentationPage() {
   const [isPreparingPhotos, setIsPreparingPhotos] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const isVehicleIntake = type === "VEHICLE_INTAKE";
+  const isBeforeDocumentation = type === "VEHICLE_INTAKE";
   const isSimplePhotoDocumentation =
     type === "VEHICLE_INTAKE" || type === "AFTER_DOCUMENTATION";
 
@@ -233,9 +233,9 @@ export default function NewDocumentationPage() {
   async function handleCreateApproval(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (isVehicleIntake && selectedPhotos.length === 0) {
+    if (isBeforeDocumentation && selectedPhotos.length === 0) {
       alert(
-        "Bitte füge mindestens ein Foto hinzu, um die Fahrzeugannahme zu dokumentieren."
+        "Bitte füge mindestens ein Foto hinzu, um die Vorher-Dokumentation zu speichern."
       );
       return;
     }
@@ -300,7 +300,7 @@ export default function NewDocumentationPage() {
           type,
           title: finalTitle,
           description: finalDescription,
-          priceText: isVehicleIntake ? "" : priceText,
+          priceText: isBeforeDocumentation ? "" : priceText,
           photos: uploadedPhotos,
         }),
       });
@@ -343,14 +343,14 @@ export default function NewDocumentationPage() {
           </p>
 
           <h1 className="text-3xl font-bold tracking-tight">
-            {isVehicleIntake
-              ? "Fahrzeugannahme dokumentieren"
+            {isBeforeDocumentation
+              ? "Vorher-Dokumentation erstellen"
               : "Dokumentation hinzufügen"}
           </h1>
 
           <p className="mt-3 text-slate-300">
-            {isVehicleIntake
-              ? "Dokumentiere den Zustand des Fahrzeugs bei Abgabe mit mehreren Fotos. Diese Dokumentation dient später als Nachweis bei Rückfragen oder Reklamationen."
+            {isBeforeDocumentation
+              ? "Dokumentiere den Zustand vor Beginn der Arbeit mit mehreren Fotos. Diese Dokumentation dient später als Nachweis bei Rückfragen, Abnahmen oder Reklamationen."
               : "Beschreibe die Arbeit, füge Fotos hinzu und erstelle bei Bedarf einen Nachweis oder Freigabelink für den Kunden."}
           </p>
         </div>
@@ -369,22 +369,24 @@ export default function NewDocumentationPage() {
               disabled={isBusy}
               className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <option value="ADDITIONAL_WORK">Zusatzarbeit</option>
-              <option value="DAMAGE_FOUND">Schaden entdeckt</option>
-              <option value="VEHICLE_INTAKE">Fahrzeugannahme</option>
-              <option value="AFTER_DOCUMENTATION">Nachher-Dokumentation</option>
-              <option value="OTHER">Sonstiges</option>
+              <option value="ADDITIONAL_WORK">Zusatzleistung / Nachtrag</option>
+              <option value="DAMAGE_FOUND">Mangel / Schaden dokumentiert</option>
+              <option value="VEHICLE_INTAKE">Vorher-Dokumentation</option>
+              <option value="AFTER_DOCUMENTATION">Abschluss-Dokumentation</option>
+              <option value="OTHER">Allgemeine Dokumentation</option>
             </select>
           </div>
 
-          {isVehicleIntake ? (
+          {isBeforeDocumentation ? (
             <div className="rounded-2xl border border-blue-300/20 bg-blue-300/10 p-4 text-sm leading-6 text-blue-100">
-              <p className="font-semibold">Fahrzeugannahme ohne Freigabe</p>
+              <p className="font-semibold">
+                Vorher-Dokumentation ohne Freigabe
+              </p>
               <p className="mt-2">
-                Für die Fahrzeugannahme brauchst du keinen Titel, keine
+                Für die Vorher-Dokumentation brauchst du keinen Titel, keine
                 Beschreibung und keinen Preis. Speichere einfach Fotos vom
-                Zustand bei Abgabe, zum Beispiel Außenansichten, Innenraum,
-                Felgen, vorhandene Kratzer, Dellen oder Schäden.
+                Zustand vor Beginn, zum Beispiel Einsatzort, Objekt, vorhandene
+                Schäden, Mängel, Verschmutzungen oder besondere Auffälligkeiten.
               </p>
             </div>
           ) : (
@@ -399,8 +401,8 @@ export default function NewDocumentationPage() {
                   onChange={(event) => setTitle(event.target.value)}
                   placeholder={
                     type === "DAMAGE_FOUND"
-                      ? "Kratzer an der Stoßstange"
-                      : "Bremsscheiben vorne ersetzen"
+                      ? "Mangel im Objekt dokumentiert"
+                      : "Zusatzleistung / Nachtrag"
                   }
                   disabled={isBusy}
                   className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
@@ -416,7 +418,7 @@ export default function NewDocumentationPage() {
                   rows={5}
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
-                  placeholder="Bei der Prüfung wurde festgestellt, dass die Bremsscheiben vorne stark verschlissen sind. Wir empfehlen den Austausch."
+                  placeholder="Beschreibe kurz, was dokumentiert wurde oder welche zusätzliche Leistung freigegeben werden soll."
                   disabled={isBusy}
                   className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
                   required={!isSimplePhotoDocumentation}
@@ -425,13 +427,13 @@ export default function NewDocumentationPage() {
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-200">
-                  Preis / Kostenschätzung
+                  Preis / Kostenhinweis
                 </label>
                 <input
                   type="text"
                   value={priceText}
                   onChange={(event) => setPriceText(event.target.value)}
-                  placeholder="ca. 320 € inkl. MwSt."
+                  placeholder="z. B. ca. 320 € inkl. MwSt. / nach Aufwand"
                   disabled={isBusy}
                   className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
                 />
@@ -441,12 +443,12 @@ export default function NewDocumentationPage() {
 
           <div className="rounded-2xl border border-dashed border-white/15 bg-slate-900 p-5">
             <p className="font-semibold">
-              {isVehicleIntake
-                ? "Fahrzeugzustand fotografieren"
+              {isBeforeDocumentation
+                ? "Zustand vorher fotografieren"
                 : "Fotos hinzufügen"}
             </p>
             <p className="mt-2 text-sm text-slate-400">
-              {isVehicleIntake
+              {isBeforeDocumentation
                 ? "Nimm direkt Fotos auf oder wähle vorhandene Bilder aus. Mehrere Fotos sind möglich. Bilder werden vor dem Upload automatisch verkleinert."
                 : "Nimm direkt Fotos auf oder wähle ein oder mehrere vorhandene Fotos aus. Bilder werden vor dem Upload automatisch verkleinert."}
             </p>
@@ -514,7 +516,7 @@ export default function NewDocumentationPage() {
                       <div className="relative">
                         <img
                           src={photo.previewUrl}
-                          alt={`Ausgewähltes Werkstattfoto ${index + 1}`}
+                          alt={`Ausgewähltes Dokumentationsfoto ${index + 1}`}
                           className="h-32 w-full object-cover"
                         />
                         <span className="absolute left-2 top-2 rounded-full bg-slate-950/80 px-2 py-1 text-xs font-semibold text-white">
@@ -560,8 +562,8 @@ export default function NewDocumentationPage() {
               ? "Speichert..."
               : isPreparingPhotos
                 ? "Fotos werden vorbereitet..."
-                : isVehicleIntake
-                  ? "Fahrzeugannahme speichern"
+                : isBeforeDocumentation
+                  ? "Vorher-Dokumentation speichern"
                   : "Dokumentation speichern"}
           </button>
         </form>

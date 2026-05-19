@@ -26,9 +26,7 @@ export default function ImpressumPage() {
               </h2>
 
               <div className="mt-3 rounded-2xl bg-slate-900 p-4">
-                <p className="font-semibold text-white">
-                  Cedrik Riekewald
-                </p>
+                <p className="font-semibold text-white">Cedrik Riekewald</p>
                 <p className="mt-2">
                   Straße und Hausnummer ergänzen
                   <br />
@@ -46,10 +44,10 @@ export default function ImpressumPage() {
                 <p>
                   E-Mail:{" "}
                   <a
-                    href="mailto:cedrikrie@gmail.com"
+                    href="mailto:aiserviceengine@gmail.com"
                     className="font-semibold text-white underline underline-offset-4"
                   >
-                    cedrikrie@gmail.com
+                    aiserviceengine@gmail.com
                   </a>
                 </p>
               </div>
@@ -70,15 +68,13 @@ export default function ImpressumPage() {
             </section>
 
             <section>
-              <h2 className="text-lg font-bold text-white">
-                Hinweis
-              </h2>
+              <h2 className="text-lg font-bold text-white">Hinweis</h2>
 
               <p>
-                Dieses Impressum ist als technische Platzhalterseite vorbereitet.
-                Bitte ergänze vor einer öffentlichen Nutzung alle rechtlich
-                erforderlichen Angaben vollständig und lasse den Inhalt bei
-                Bedarf rechtlich prüfen.
+                Dieses Impressum ist aktuell als Platzhalter vorbereitet. Vor
+                einer produktiven öffentlichen Nutzung müssen alle rechtlich
+                erforderlichen Angaben vollständig ergänzt und bei Bedarf
+                rechtlich geprüft werden.
               </p>
             </section>
           </div>

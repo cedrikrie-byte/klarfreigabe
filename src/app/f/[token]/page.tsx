@@ -16,6 +16,14 @@ type ApprovalPhoto = {
   fileName: string | null;
 };
 
+function formatDateTime(date: Date) {
+  return new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin",
+    dateStyle: "short",
+    timeStyle: "medium",
+  }).format(new Date(date));
+}
+
 export default async function ApprovalPage({ params }: ApprovalPageProps) {
   const { token } = await params;
 
@@ -60,15 +68,16 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
           </p>
 
           <h1 className="mt-2 text-3xl font-bold tracking-tight">
-            Zusatzarbeit freigeben
+            Zusatzleistung freigeben
           </h1>
 
           <p className="mt-3 text-slate-600">
-            {company.name} bittet um Ihre Freigabe für eine zusätzliche Arbeit.
+            {company.name} bittet um Ihre Freigabe für eine zusätzliche Leistung
+            oder einen Nachtrag.
           </p>
 
           <div className="mt-5 rounded-2xl bg-slate-100 p-4">
-            <p className="text-sm text-slate-500">Werkstatt / Betrieb</p>
+            <p className="text-sm text-slate-500">Betrieb</p>
             <p className="mt-1 font-semibold">{company.name}</p>
 
             {company.phone && (
@@ -97,6 +106,18 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
                   ? "Freigegeben"
                   : "Rückfrage / abgelehnt"}
               </p>
+
+              {approval.approvedAt && (
+                <p className="mt-1 text-sm text-slate-600">
+                  Freigegeben am: {formatDateTime(approval.approvedAt)}
+                </p>
+              )}
+
+              {approval.rejectedAt && (
+                <p className="mt-1 text-sm text-slate-600">
+                  Rückfrage gesendet am: {formatDateTime(approval.rejectedAt)}
+                </p>
+              )}
             </div>
           )}
 
@@ -108,13 +129,15 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
               <p className="mt-1 text-sm text-slate-600">
                 {job.vehicle}
                 {job.vehicle && job.licensePlate ? " · " : ""}
-                {job.licensePlate}
+                {job.licensePlate ? `Referenz: ${job.licensePlate}` : ""}
               </p>
             )}
           </div>
 
           <div className="mt-4 rounded-2xl bg-slate-100 p-4">
-            <p className="text-sm text-slate-500">Empfohlene Zusatzarbeit</p>
+            <p className="text-sm text-slate-500">
+              Zusatzleistung / Nachtrag
+            </p>
             <p className="mt-1 font-semibold">{item.title}</p>
 
             <p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-600">
@@ -124,7 +147,7 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
 
           {item.priceText && (
             <div className="mt-4 rounded-2xl bg-slate-100 p-4">
-              <p className="text-sm text-slate-500">Kostenschätzung</p>
+              <p className="text-sm text-slate-500">Preis / Kostenhinweis</p>
               <p className="mt-1 text-2xl font-bold">{item.priceText}</p>
             </div>
           )}
@@ -155,8 +178,8 @@ export default async function ApprovalPage({ params }: ApprovalPageProps) {
 
           <p className="mt-5 text-xs leading-5 text-slate-500">
             Mit der Freigabe bestätigen Sie, dass die oben beschriebene
-            Zusatzarbeit durchgeführt werden darf. Bei einer Rückfrage wird Ihre
-            Nachricht an die Werkstatt übermittelt.
+            Zusatzleistung oder der Nachtrag durchgeführt werden darf. Bei einer
+            Rückfrage wird Ihre Nachricht an den Betrieb übermittelt.
           </p>
         </div>
 

@@ -35,10 +35,10 @@ export default function DatenschutzPage() {
                   <br />
                   E-Mail:{" "}
                   <a
-                    href="mailto:cedrikrie@gmail.com"
+                    href="mailto:aiserviceengine@gmail.com"
                     className="font-semibold text-white underline underline-offset-4"
                   >
-                    cedrikrie@gmail.com
+                    aiserviceengine@gmail.com
                   </a>
                 </p>
               </div>
@@ -50,11 +50,12 @@ export default function DatenschutzPage() {
               </h2>
 
               <p>
-                {APP_NAME} dient der digitalen Dokumentation von Werkstattaufträgen,
-                Fahrzeugzuständen, Fotos, Kundenfreigaben und Nachweisen.
-                Dabei können insbesondere Kunden- und Fahrzeugdaten,
-                Kontaktdaten, Auftragsdaten, Fotos sowie Freigabeentscheidungen
-                verarbeitet werden.
+                {APP_NAME} dient der digitalen Foto-Dokumentation,
+                Kundenfreigabe und Nachweiserstellung für Handwerks-,
+                Service- und Dienstleistungsbetriebe. Dabei können insbesondere
+                Kunden- und Kontaktdaten, Auftragsdaten, Einsatzorte,
+                Dokumentationsfotos, Freigabeentscheidungen, Zeitpunkte und
+                Kundenkommentare verarbeitet werden.
               </p>
             </section>
 
@@ -64,12 +65,13 @@ export default function DatenschutzPage() {
               </h2>
 
               <ul className="mt-3 list-disc space-y-2 pl-5">
-                <li>Name und Kontaktdaten von Kunden</li>
-                <li>Fahrzeugdaten wie Modell oder Kennzeichen</li>
-                <li>Auftrags- und Dokumentationsdaten</li>
-                <li>Fotos zur Fahrzeug- oder Schadensdokumentation</li>
+                <li>Name und Kontaktdaten von Kunden oder Ansprechpartnern</li>
+                <li>Betriebs-, Firmen- oder Objektdaten</li>
+                <li>Auftrags-, Einsatzort- und Referenzdaten</li>
+                <li>Beschreibungen von Arbeiten, Mängeln oder Zusatzleistungen</li>
+                <li>Fotos zur Dokumentation von Zustand, Mängeln oder Ergebnissen</li>
                 <li>Freigabestatus, Zeitpunkte und Kundenkommentare</li>
-                <li>Technische Daten wie IP-bezogene Sicherheitsinformationen</li>
+                <li>Technische Daten, die für Betrieb und Sicherheit erforderlich sind</li>
               </ul>
             </section>
 
@@ -80,15 +82,16 @@ export default function DatenschutzPage() {
 
               <p>
                 Die Anwendung kann technische Dienstleister für Hosting,
-                Datenbank, Dateiablage und E-Mail-Versand nutzen. Dazu gehören
-                insbesondere Dienste für Webhosting, Datenbankbetrieb,
+                Datenbankbetrieb, Dateiablage und E-Mail-Versand nutzen. Dazu
+                gehören insbesondere Dienste für Webhosting, Datenbankbetrieb,
                 Bildspeicherung und E-Mail-Zustellung.
               </p>
 
               <p className="mt-3">
-                Bitte ergänze hier die final verwendeten Anbieter, zum Beispiel
-                Vercel, Neon, Vercel Blob und Resend, inklusive passender
-                Datenschutzinformationen.
+                Bitte ergänze hier vor produktiver Nutzung die final verwendeten
+                Anbieter, zum Beispiel Vercel, Neon, Vercel Blob und Resend,
+                inklusive passender Datenschutzinformationen und
+                Auftragsverarbeitungsverträge.
               </p>
             </section>
 
@@ -124,10 +127,12 @@ export default function DatenschutzPage() {
               </h2>
 
               <p>
-                Diese Datenschutzerklärung ist als technische Platzhalterseite
-                vorbereitet. Bitte ersetze sie vor einer öffentlichen Nutzung
-                durch eine vollständige, auf deinen tatsächlichen Betrieb und
-                deine eingesetzten Dienste abgestimmte Datenschutzerklärung.
+                Diese Datenschutzerklärung ist aktuell als Platzhalter
+                vorbereitet. Vor einer produktiven öffentlichen Nutzung muss sie
+                durch eine vollständige, auf den tatsächlichen Betrieb, die
+                eingesetzten Dienste und die konkreten Verarbeitungsvorgänge
+                abgestimmte Datenschutzerklärung ersetzt oder rechtlich geprüft
+                werden.
               </p>
             </section>
           </div>
